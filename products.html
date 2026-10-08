@@ -1,0 +1,452 @@
+{% extends "base.html" %}
+
+{% block title %}Products | Smart Retail ERP{% endblock %}
+
+{% block page_title %}Products{% endblock %}
+
+{% block page_subtitle %}Manage product details, stock, price, images, and categories{% endblock %}
+
+{% block content %}
+
+<div class="panel-card mb-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <div>
+            <h5 class="mb-1">Add New Product</h5>
+            <p class="text-muted mb-0">Enter complete product information</p>
+        </div>
+        <i class="bi bi-plus-circle fs-2 text-primary"></i>
+    </div>
+
+    <form method="POST" action="{{ url_for('product.add_product_route') }}" enctype="multipart/form-data">
+        <div class="row g-3">
+
+            <div class="col-md-4">
+                <label class="form-label">Product Name</label>
+                <input type="text" name="product_name" class="form-control" required>
+            </div>
+
+            <div class="col-md-4">
+                <label class="form-label">Brand</label>
+                <input type="text" name="brand" class="form-control" placeholder="Example: Logitech">
+            </div>
+
+            <div class="col-md-4">
+                <label class="form-label">Category</label>
+                <select name="category_id" id="category_id" class="form-select" required>
+                    <option value="">Select Category</option>
+                    {% for category in categories %}
+                        <option value="{{ category[0] }}">{{ category[1] }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="col-md-4">
+                <label class="form-label">SKU Code</label>
+                <input type="text" id="sku" name="sku" class="form-control" placeholder="Auto generated" readonly required>
+            </div>
+
+            <div class="col-md-4">
+                <label class="form-label">Unit</label>
+                <select name="unit" class="form-select">
+                    <option value="Piece">Piece</option>
+                    <option value="Kg">Kg</option>
+                    <option value="Gram">Gram</option>
+                    <option value="Liter">Liter</option>
+                    <option value="Box">Box</option>
+                    <option value="Packet">Packet</option>
+                </select>
+            </div>
+
+            <div class="col-md-4">
+                <label class="form-label">Product Image</label>
+                <input type="file" name="image" class="form-control" accept="image/*">
+            </div>
+
+            <div class="col-md-3">
+                <label class="form-label">Cost Price</label>
+                <input type="number" step="0.01" name="cost_price" class="form-control" required>
+            </div>
+
+            <div class="col-md-3">
+                <label class="form-label">Selling Price</label>
+                <input type="number" step="0.01" name="selling_price" class="form-control" required>
+            </div>
+
+            <div class="col-md-3">
+                <label class="form-label">Stock Quantity</label>
+                <input type="number" name="stock_quantity" class="form-control" required>
+            </div>
+
+            <div class="col-md-3">
+                <label class="form-label">Reorder Level</label>
+                <input type="number" name="reorder_level" value="5" class="form-control" required>
+            </div>
+
+            <div class="col-md-8">
+                <label class="form-label">Description</label>
+                <textarea name="description" class="form-control" rows="2" placeholder="Product details"></textarea>
+            </div>
+
+            <div class="col-md-4">
+                <label class="form-label">Status</label>
+                <select name="status" class="form-select" required>
+                    <option value="Active">Active</option>
+                    <option value="Inactive">Inactive</option>
+                </select>
+            </div>
+
+            <div class="col-12 text-end">
+                <button type="submit" class="btn btn-primary px-4">
+                    <i class="bi bi-plus-lg me-1"></i> Add Product
+                </button>
+            </div>
+
+        </div>
+    </form>
+</div>
+
+
+<div class="panel-card">
+
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <div>
+            <h5 class="mb-1">Product List</h5>
+            <p class="text-muted mb-0">Search, filter, view, edit, and delete products</p>
+        </div>
+
+        <span class="badge bg-primary-subtle text-primary px-3 py-2">
+            Total: {{ products|length }}
+        </span>
+    </div>
+
+    <!-- Search and Filters -->
+    <div class="row g-3 mb-4">
+        <div class="col-md-5">
+            <input type="text" id="searchInput" class="form-control" placeholder="Search product, brand, SKU...">
+        </div>
+
+        <div class="col-md-3">
+            <select id="categoryFilter" class="form-select">
+                <option value="">All Categories</option>
+                {% for category in categories %}
+                    <option value="{{ category[1] }}">{{ category[1] }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="col-md-2">
+            <select id="statusFilter" class="form-select">
+                <option value="">All Status</option>
+                <option value="Active">Active</option>
+                <option value="Inactive">Inactive</option>
+            </select>
+        </div>
+
+        <div class="col-md-2">
+            <select id="stockFilter" class="form-select">
+                <option value="">All Stock</option>
+                <option value="low">Low Stock</option>
+                <option value="normal">Normal Stock</option>
+            </select>
+        </div>
+    </div>
+
+    <div class="table-responsive">
+        <table class="table table-hover align-middle" id="productsTable">
+            <thead class="table-light">
+                <tr>
+                    <th>Image</th>
+                    <th>Product</th>
+                    <th>Brand</th>
+                    <th>Category</th>
+                    <th>SKU</th>
+                    <th>Price</th>
+                    <th>Stock</th>
+                    <th>Unit</th>
+                    <th>Status</th>
+                    <th class="text-center">Action</th>
+                </tr>
+            </thead>
+
+            <tbody>
+                {% for product in products %}
+                <tr class="product-row"
+                    data-name="{{ product[1]|lower }}"
+                    data-brand="{{ product[2]|lower if product[2] else '' }}"
+                    data-category="{{ product[5] }}"
+                    data-sku="{{ product[6]|lower }}"
+                    data-status="{{ product[11] }}"
+                    data-stock="{% if product[9] <= product[10] %}low{% else %}normal{% endif %}">
+
+                    <td>
+                        {% if product[12] %}
+                            <img src="{{ url_for('static', filename='uploads/products/' ~ product[12]) }}"
+                                 width="55" height="55"
+                                 style="object-fit: cover; border-radius: 12px;">
+                        {% else %}
+                            <div style="width:55px;height:55px;border-radius:12px;background:#e5e7eb;display:flex;align-items:center;justify-content:center;">
+                                <i class="bi bi-image text-muted"></i>
+                            </div>
+                        {% endif %}
+                    </td>
+
+                    <td style="min-width:220px;">
+                        <h6 class="fw-bold mb-1">{{ product[1] }}</h6>
+                        <small class="text-muted">SKU: {{ product[6] }}</small>
+                    </td>
+
+                    <td>{{ product[2] or '-' }}</td>
+
+                    <td>{{ product[5] }}</td>
+
+                    <td>
+                        <span class="badge bg-light text-dark border">{{ product[6] }}</span>
+                    </td>
+
+                    <td>
+                        <strong>₹{{ product[8] }}</strong>
+                        <br>
+                        <small class="text-muted">Cost: ₹{{ product[7] }}</small>
+                    </td>
+
+                    <td>
+                        {% if product[9] <= product[10] %}
+                            <span class="badge bg-danger-subtle text-danger px-3 py-2">
+                                Low: {{ product[9] }}
+                            </span>
+                        {% else %}
+                            <span class="badge bg-success-subtle text-success px-3 py-2">
+                                {{ product[9] }}
+                            </span>
+                        {% endif %}
+                    </td>
+
+                    <td>{{ product[4] }}</td>
+
+                    <td>
+                        {% if product[11] == 'Active' %}
+                            <span class="badge bg-success-subtle text-success px-3 py-2">Active</span>
+                        {% else %}
+                            <span class="badge bg-secondary-subtle text-secondary px-3 py-2">Inactive</span>
+                        {% endif %}
+                    </td>
+
+                    <td class="text-center">
+                        <div class="d-flex justify-content-center gap-2">
+
+                            <button type="button"
+                                    class="btn btn-outline-info btn-sm px-3"
+                                    data-bs-toggle="modal"
+                                    data-bs-target="#productModal{{ product[0] }}">
+                                <i class="bi bi-eye me-1"></i> View
+                            </button>
+
+                            <a href="{{ url_for('product.edit_product_route', product_id=product[0]) }}"
+                               class="btn btn-outline-primary btn-sm px-3">
+                                <i class="bi bi-pencil-square me-1"></i> Edit
+                            </a>
+
+                            <a href="{{ url_for('product.delete_product_route', product_id=product[0]) }}"
+                               class="btn btn-outline-danger btn-sm px-3"
+                               onclick="return confirm('Are you sure you want to delete this product?');">
+                                <i class="bi bi-trash me-1"></i> Delete
+                            </a>
+
+                        </div>
+                    </td>
+                </tr>
+
+                <!-- Product Details Modal -->
+                <div class="modal fade" id="productModal{{ product[0] }}" tabindex="-1">
+                    <div class="modal-dialog modal-lg modal-dialog-centered">
+                        <div class="modal-content" style="border-radius:20px;">
+                            <div class="modal-header">
+                                <h5 class="modal-title">
+                                    <i class="bi bi-box-seam me-2 text-primary"></i>
+                                    Product Details
+                                </h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                            </div>
+
+                            <div class="modal-body">
+                                <div class="row g-4">
+
+                                    <div class="col-md-4 text-center">
+                                        {% if product[12] %}
+                                            <img src="{{ url_for('static', filename='uploads/products/' ~ product[12]) }}"
+                                                 width="180" height="180"
+                                                 style="object-fit: cover; border-radius: 20px;">
+                                        {% else %}
+                                            <div style="width:180px;height:180px;border-radius:20px;background:#e5e7eb;display:flex;align-items:center;justify-content:center;margin:auto;">
+                                                <i class="bi bi-image text-muted fs-1"></i>
+                                            </div>
+                                        {% endif %}
+                                    </div>
+
+                                    <div class="col-md-8">
+                                        <h4 class="fw-bold">{{ product[1] }}</h4>
+                                        <p class="text-muted mb-3">{{ product[3] or "No description available." }}</p>
+
+                                        <div class="row g-3">
+                                            <div class="col-md-6">
+                                                <small class="text-muted">Brand</small>
+                                                <div class="fw-semibold">{{ product[2] or '-' }}</div>
+                                            </div>
+
+                                            <div class="col-md-6">
+                                                <small class="text-muted">Category</small>
+                                                <div class="fw-semibold">{{ product[5] }}</div>
+                                            </div>
+
+                                            <div class="col-md-6">
+                                                <small class="text-muted">SKU</small>
+                                                <div class="fw-semibold">{{ product[6] }}</div>
+                                            </div>
+
+                                            <div class="col-md-6">
+                                                <small class="text-muted">Unit</small>
+                                                <div class="fw-semibold">{{ product[4] }}</div>
+                                            </div>
+
+                                            <div class="col-md-6">
+                                                <small class="text-muted">Cost Price</small>
+                                                <div class="fw-semibold">₹{{ product[7] }}</div>
+                                            </div>
+
+                                            <div class="col-md-6">
+                                                <small class="text-muted">Selling Price</small>
+                                                <div class="fw-semibold text-success">₹{{ product[8] }}</div>
+                                            </div>
+
+                                            <div class="col-md-6">
+                                                <small class="text-muted">Stock Quantity</small>
+                                                <div class="fw-semibold">{{ product[9] }}</div>
+                                            </div>
+
+                                            <div class="col-md-6">
+                                                <small class="text-muted">Reorder Level</small>
+                                                <div class="fw-semibold">{{ product[10] }}</div>
+                                            </div>
+
+                                            <div class="col-md-6">
+                                                <small class="text-muted">Status</small>
+                                                <div>
+                                                    {% if product[11] == 'Active' %}
+                                                        <span class="badge bg-success-subtle text-success px-3 py-2">Active</span>
+                                                    {% else %}
+                                                        <span class="badge bg-secondary-subtle text-secondary px-3 py-2">Inactive</span>
+                                                    {% endif %}
+                                                </div>
+                                            </div>
+
+                                            <div class="col-md-6">
+                                                <small class="text-muted">Stock Alert</small>
+                                                <div>
+                                                    {% if product[9] <= product[10] %}
+                                                        <span class="badge bg-danger-subtle text-danger px-3 py-2">Low Stock</span>
+                                                    {% else %}
+                                                        <span class="badge bg-success-subtle text-success px-3 py-2">Normal Stock</span>
+                                                    {% endif %}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                </div>
+                            </div>
+
+                            <div class="modal-footer">
+                                <a href="{{ url_for('product.edit_product_route', product_id=product[0]) }}"
+                                   class="btn btn-primary">
+                                    <i class="bi bi-pencil-square me-1"></i> Edit Product
+                                </a>
+
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                                    Close
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {% else %}
+                <tr>
+                    <td colspan="10" class="text-center text-muted py-4">
+                        <i class="bi bi-box-seam fs-3 d-block mb-2"></i>
+                        No products found
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+
+<script>
+document.getElementById("category_id").addEventListener("change", function () {
+    let categoryId = this.value;
+    let skuInput = document.getElementById("sku");
+
+    if (categoryId === "") {
+        skuInput.value = "";
+        return;
+    }
+
+    fetch(`/products/generate-sku/${categoryId}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                skuInput.value = data.sku;
+            } else {
+                skuInput.value = "";
+                alert("SKU could not be generated.");
+            }
+        })
+        .catch(error => {
+            console.error("Error:", error);
+            alert("Something went wrong while generating SKU.");
+        });
+});
+
+
+function filterProducts() {
+    let searchValue = document.getElementById("searchInput").value.toLowerCase();
+    let categoryValue = document.getElementById("categoryFilter").value;
+    let statusValue = document.getElementById("statusFilter").value;
+    let stockValue = document.getElementById("stockFilter").value;
+
+    let rows = document.querySelectorAll(".product-row");
+
+    rows.forEach(row => {
+        let name = row.dataset.name;
+        let brand = row.dataset.brand;
+        let sku = row.dataset.sku;
+        let category = row.dataset.category;
+        let status = row.dataset.status;
+        let stock = row.dataset.stock;
+
+        let searchMatch =
+            name.includes(searchValue) ||
+            brand.includes(searchValue) ||
+            sku.includes(searchValue);
+
+        let categoryMatch = categoryValue === "" || category === categoryValue;
+        let statusMatch = statusValue === "" || status === statusValue;
+        let stockMatch = stockValue === "" || stock === stockValue;
+
+        if (searchMatch && categoryMatch && statusMatch && stockMatch) {
+            row.style.display = "";
+        } else {
+            row.style.display = "none";
+        }
+    });
+}
+
+document.getElementById("searchInput").addEventListener("keyup", filterProducts);
+document.getElementById("categoryFilter").addEventListener("change", filterProducts);
+document.getElementById("statusFilter").addEventListener("change", filterProducts);
+document.getElementById("stockFilter").addEventListener("change", filterProducts);
+</script>
+
+{% endblock %}

@@ -1,0 +1,1088 @@
+{% extends "base.html" %}
+
+{% block title %}Inventory Management{% endblock %}
+
+{% block content %}
+
+<div class="container-fluid py-4">
+
+    <!-- PAGE HEADER -->
+    <div class="d-flex flex-wrap justify-content-between align-items-center mb-4">
+
+        <div>
+
+            <span class="text-muted small">
+                INVENTORY MANAGEMENT
+            </span>
+
+            <h2 class="fw-bold mb-1">
+                Inventory Overview
+            </h2>
+
+            <p class="text-muted mb-0">
+                Monitor stock levels, inventory value and stock movements.
+            </p>
+
+        </div>
+
+
+        <div class="d-flex gap-2 mt-3 mt-md-0">
+
+            <button
+                type="button"
+                class="btn btn-primary"
+                data-bs-toggle="modal"
+                data-bs-target="#stockInModal"
+            >
+                <i class="bi bi-box-arrow-in-down me-1"></i>
+                Stock In
+            </button>
+
+
+            <button
+                type="button"
+                class="btn btn-outline-primary"
+                data-bs-toggle="modal"
+                data-bs-target="#stockOutModal"
+            >
+                <i class="bi bi-box-arrow-up me-1"></i>
+                Stock Out
+            </button>
+
+
+            <button
+                type="button"
+                class="btn btn-outline-secondary"
+                data-bs-toggle="modal"
+                data-bs-target="#adjustStockModal"
+            >
+                <i class="bi bi-sliders me-1"></i>
+                Adjust
+            </button>
+
+        </div>
+
+    </div>
+
+
+    <!-- SUMMARY CARDS -->
+    <div class="row g-4 mb-4">
+
+        <!-- TOTAL PRODUCTS -->
+        <div class="col-xl-3 col-md-6">
+
+            <div class="card border-0 shadow-sm h-100">
+
+                <div class="card-body">
+
+                    <div class="d-flex justify-content-between">
+
+                        <div>
+
+                            <p class="text-muted mb-2">
+                                Total Products
+                            </p>
+
+                            <h3 class="fw-bold mb-1">
+                                {{ summary.total_products }}
+                            </h3>
+
+                            <small class="text-muted">
+                                Active products
+                            </small>
+
+                        </div>
+
+                        <div class="inventory-icon bg-primary-subtle text-primary">
+
+                            <i class="bi bi-box-seam"></i>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <!-- TOTAL UNITS -->
+        <div class="col-xl-3 col-md-6">
+
+            <div class="card border-0 shadow-sm h-100">
+
+                <div class="card-body">
+
+                    <div class="d-flex justify-content-between">
+
+                        <div>
+
+                            <p class="text-muted mb-2">
+                                Total Units
+                            </p>
+
+                            <h3 class="fw-bold mb-1">
+                                {{ summary.total_units }}
+                            </h3>
+
+                            <small class="text-muted">
+                                Current available units
+                            </small>
+
+                        </div>
+
+                        <div class="inventory-icon bg-info-subtle text-info">
+
+                            <i class="bi bi-stack"></i>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <!-- INVENTORY VALUE -->
+        <div class="col-xl-3 col-md-6">
+
+            <div class="card border-0 shadow-sm h-100">
+
+                <div class="card-body">
+
+                    <div class="d-flex justify-content-between">
+
+                        <div>
+
+                            <p class="text-muted mb-2">
+                                Inventory Value
+                            </p>
+
+                            <h3 class="fw-bold mb-1">
+                                ₹{{ "%.2f"|format(summary.inventory_value) }}
+                            </h3>
+
+                            <small class="text-muted">
+                                Based on cost price
+                            </small>
+
+                        </div>
+
+                        <div class="inventory-icon bg-success-subtle text-success">
+
+                            <i class="bi bi-currency-rupee"></i>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <!-- STOCK ALERTS -->
+        <div class="col-xl-3 col-md-6">
+
+            <div class="card border-0 shadow-sm h-100">
+
+                <div class="card-body">
+
+                    <div class="d-flex justify-content-between">
+
+                        <div>
+
+                            <p class="text-muted mb-2">
+                                Stock Alerts
+                            </p>
+
+                            <h3 class="fw-bold mb-1">
+
+                                {{ summary.low_stock + summary.out_of_stock }}
+
+                            </h3>
+
+                            <small class="text-danger">
+
+                                {{ summary.out_of_stock }}
+                                out of stock
+
+                                ·
+
+                                {{ summary.low_stock }}
+                                low stock
+
+                            </small>
+
+                        </div>
+
+                        <div class="inventory-icon bg-danger-subtle text-danger">
+
+                            <i class="bi bi-exclamation-triangle"></i>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <!-- INVENTORY TABLE CARD -->
+    <div class="card border-0 shadow-sm">
+
+        <div class="card-body p-0">
+
+
+            <!-- TABLE HEADER -->
+            <div class="p-4 border-bottom">
+
+                <div class="d-flex justify-content-between align-items-center">
+
+                    <div>
+
+                        <h5 class="fw-bold mb-1">
+                            Inventory
+                        </h5>
+
+                        <p class="text-muted small mb-0">
+                            Current stock position by product
+                        </p>
+
+                    </div>
+
+
+                    <a
+                        href="{{ url_for('inventory.inventory_movements') }}"
+                        class="btn btn-light border"
+                    >
+                        <i class="bi bi-clock-history me-1"></i>
+                        Movement History
+                    </a>
+
+                </div>
+
+
+                <!-- SEARCH / FILTER -->
+                <form
+                    method="GET"
+                    action="{{ url_for('inventory.inventory_index') }}"
+                    class="row g-2 mt-3"
+                >
+
+                    <div class="col-lg-6">
+
+                        <div class="input-group">
+
+                            <span class="input-group-text bg-white">
+
+                                <i class="bi bi-search"></i>
+
+                            </span>
+
+
+                            <input
+                                type="text"
+                                name="search"
+                                class="form-control"
+                                placeholder="Search product, SKU, brand or category..."
+                                value="{{ search }}"
+                            >
+
+                        </div>
+
+                    </div>
+
+
+                    <div class="col-lg-3">
+
+                        <select
+                            name="stock_filter"
+                            class="form-select"
+                        >
+
+                            <option value="">
+                                All Stock
+                            </option>
+
+                            <option
+                                value="in_stock"
+                                {% if stock_filter == "in_stock" %}selected{% endif %}
+                            >
+                                In Stock
+                            </option>
+
+                            <option
+                                value="low_stock"
+                                {% if stock_filter == "low_stock" %}selected{% endif %}
+                            >
+                                Low Stock
+                            </option>
+
+                            <option
+                                value="out_of_stock"
+                                {% if stock_filter == "out_of_stock" %}selected{% endif %}
+                            >
+                                Out of Stock
+                            </option>
+
+                            <option
+                                value="active"
+                                {% if stock_filter == "active" %}selected{% endif %}
+                            >
+                                Active Products
+                            </option>
+
+                        </select>
+
+                    </div>
+
+
+                    <div class="col-lg-3 d-flex gap-2">
+
+                        <button
+                            type="submit"
+                            class="btn btn-primary flex-grow-1"
+                        >
+                            <i class="bi bi-funnel me-1"></i>
+                            Filter
+                        </button>
+
+
+                        <a
+                            href="{{ url_for('inventory.inventory_index') }}"
+                            class="btn btn-light border"
+                            title="Clear filters"
+                        >
+                            <i class="bi bi-arrow-counterclockwise"></i>
+                        </a>
+
+                    </div>
+
+                </form>
+
+            </div>
+
+
+            <!-- TABLE -->
+            <div class="table-responsive">
+
+                <table class="table align-middle mb-0">
+
+                    <thead class="table-light">
+
+                        <tr>
+
+                            <th class="ps-4">
+                                Product
+                            </th>
+
+                            <th>
+                                SKU
+                            </th>
+
+                            <th>
+                                Category
+                            </th>
+
+                            <th>
+                                Current Stock
+                            </th>
+
+                            <th>
+                                Reorder Level
+                            </th>
+
+                            <th>
+                                Status
+                            </th>
+
+                            <th class="text-end pe-4">
+                                Action
+                            </th>
+
+                        </tr>
+
+                    </thead>
+
+
+                    <tbody>
+
+                    {% if products %}
+
+                        {% for product in products %}
+
+                        <tr>
+
+                            <!-- PRODUCT -->
+                            <td class="ps-4">
+
+                                <div class="d-flex align-items-center">
+
+                                    {% if product.image %}
+
+                                    <img
+                                        src="{{ url_for('static', filename='uploads/products/' + product.image) }}"
+                                        alt="{{ product.product_name }}"
+                                        width="45"
+                                        height="45"
+                                        class="rounded-3 me-3"
+                                        style="object-fit: cover;"
+                                    >
+
+                                    {% else %}
+
+                                    <div
+                                        class="bg-light rounded-3 me-3 d-flex align-items-center justify-content-center"
+                                        style="width:45px;height:45px;"
+                                    >
+
+                                        <i class="bi bi-box text-muted"></i>
+
+                                    </div>
+
+                                    {% endif %}
+
+
+                                    <div>
+
+                                        <div class="fw-semibold">
+                                            {{ product.product_name }}
+                                        </div>
+
+                                        {% if product.brand %}
+
+                                        <small class="text-muted">
+                                            {{ product.brand }}
+                                        </small>
+
+                                        {% endif %}
+
+                                    </div>
+
+                                </div>
+
+                            </td>
+
+
+                            <!-- SKU -->
+                            <td>
+
+                                <span class="font-monospace small">
+                                    {{ product.sku }}
+                                </span>
+
+                            </td>
+
+
+                            <!-- CATEGORY -->
+                            <td>
+
+                                {{ product.category_name or "Uncategorized" }}
+
+                            </td>
+
+
+                            <!-- STOCK -->
+                            <td>
+
+                                <strong>
+                                    {{ product.stock_quantity }}
+                                </strong>
+
+                                {% if product.unit %}
+
+                                <small class="text-muted">
+                                    {{ product.unit }}
+                                </small>
+
+                                {% endif %}
+
+                            </td>
+
+
+                            <!-- REORDER LEVEL -->
+                            <td>
+
+                                {{ product.reorder_level }}
+
+                            </td>
+
+
+                            <!-- STATUS -->
+                            <td>
+
+                                {% if product.stock_status == "Out of Stock" %}
+
+                                <span class="badge bg-danger-subtle text-danger">
+
+                                    <i class="bi bi-x-circle me-1"></i>
+
+                                    Out of Stock
+
+                                </span>
+
+                                {% elif product.stock_status == "Low Stock" %}
+
+                                <span class="badge bg-warning-subtle text-warning-emphasis">
+
+                                    <i class="bi bi-exclamation-circle me-1"></i>
+
+                                    Low Stock
+
+                                </span>
+
+                                {% else %}
+
+                                <span class="badge bg-success-subtle text-success">
+
+                                    <i class="bi bi-check-circle me-1"></i>
+
+                                    In Stock
+
+                                </span>
+
+                                {% endif %}
+
+                            </td>
+
+
+                            <!-- ACTION -->
+                            <td class="text-end pe-4">
+
+                                <a
+                                    href="{{ url_for('inventory.inventory_movements', product_id=product.id) }}"
+                                    class="btn btn-sm btn-light border"
+                                    title="View stock movements"
+                                >
+
+                                    <i class="bi bi-clock-history"></i>
+
+                                </a>
+
+                            </td>
+
+                        </tr>
+
+                        {% endfor %}
+
+                    {% else %}
+
+                        <tr>
+
+                            <td colspan="7">
+
+                                <div class="text-center py-5">
+
+                                    <i
+                                        class="bi bi-box-seam text-muted"
+                                        style="font-size: 45px;"
+                                    ></i>
+
+                                    <h5 class="fw-bold mt-3">
+                                        No inventory records found
+                                    </h5>
+
+                                    <p class="text-muted mb-0">
+                                        Try changing your search or filter.
+                                    </p>
+
+                                </div>
+
+                            </td>
+
+                        </tr>
+
+                    {% endif %}
+
+                    </tbody>
+
+                </table>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+<!-- =====================================================
+     STOCK IN MODAL
+     ===================================================== -->
+
+<div
+    class="modal fade"
+    id="stockInModal"
+    tabindex="-1"
+>
+
+    <div class="modal-dialog modal-dialog-centered">
+
+        <div class="modal-content border-0 shadow">
+
+            <form
+                method="POST"
+                action="{{ url_for('inventory.stock_in') }}"
+            >
+
+                <div class="modal-header">
+
+                    <div>
+
+                        <h5 class="modal-title fw-bold">
+
+                            <i class="bi bi-box-arrow-in-down text-primary me-2"></i>
+
+                            Stock In
+
+                        </h5>
+
+                        <small class="text-muted">
+                            Add received stock
+                        </small>
+
+                    </div>
+
+
+                    <button
+                        type="button"
+                        class="btn-close"
+                        data-bs-dismiss="modal"
+                    ></button>
+
+                </div>
+
+
+                <div class="modal-body">
+
+                    <div class="mb-3">
+
+                        <label class="form-label fw-semibold">
+                            Product
+                        </label>
+
+                        <select
+                            name="product_id"
+                            class="form-select"
+                            required
+                        >
+
+                            <option value="">
+                                Select Product
+                            </option>
+
+                            {% for product in active_products %}
+
+                            <option value="{{ product.id }}">
+
+                                {{ product.product_name }}
+
+                                —
+                                {{ product.sku }}
+
+                                (Current:
+                                {{ product.stock_quantity }})
+
+                            </option>
+
+                            {% endfor %}
+
+                        </select>
+
+                    </div>
+
+
+                    <div class="mb-3">
+
+                        <label class="form-label fw-semibold">
+                            Quantity
+                        </label>
+
+                        <input
+                            type="number"
+                            name="quantity"
+                            class="form-control"
+                            min="1"
+                            required
+                        >
+
+                    </div>
+
+
+                    <div class="mb-3">
+
+                        <label class="form-label fw-semibold">
+                            Note
+                            <span class="text-muted fw-normal">
+                                (Optional)
+                            </span>
+                        </label>
+
+                        <textarea
+                            name="note"
+                            class="form-control"
+                            rows="3"
+                            placeholder="Example: New supplier shipment"
+                        ></textarea>
+
+                    </div>
+
+                </div>
+
+
+                <div class="modal-footer">
+
+                    <button
+                        type="button"
+                        class="btn btn-light border"
+                        data-bs-dismiss="modal"
+                    >
+                        Cancel
+                    </button>
+
+                    <button
+                        type="submit"
+                        class="btn btn-primary"
+                    >
+                        <i class="bi bi-plus-circle me-1"></i>
+                        Add Stock
+                    </button>
+
+                </div>
+
+            </form>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+<!-- =====================================================
+     STOCK OUT MODAL
+     ===================================================== -->
+
+<div
+    class="modal fade"
+    id="stockOutModal"
+    tabindex="-1"
+>
+
+    <div class="modal-dialog modal-dialog-centered">
+
+        <div class="modal-content border-0 shadow">
+
+            <form
+                method="POST"
+                action="{{ url_for('inventory.stock_out') }}"
+            >
+
+                <div class="modal-header">
+
+                    <div>
+
+                        <h5 class="modal-title fw-bold">
+
+                            <i class="bi bi-box-arrow-up text-warning me-2"></i>
+
+                            Stock Out
+
+                        </h5>
+
+                        <small class="text-muted">
+                            Remove stock from inventory
+                        </small>
+
+                    </div>
+
+
+                    <button
+                        type="button"
+                        class="btn-close"
+                        data-bs-dismiss="modal"
+                    ></button>
+
+                </div>
+
+
+                <div class="modal-body">
+
+                    <div class="mb-3">
+
+                        <label class="form-label fw-semibold">
+                            Product
+                        </label>
+
+                        <select
+                            name="product_id"
+                            class="form-select"
+                            required
+                        >
+
+                            <option value="">
+                                Select Product
+                            </option>
+
+                            {% for product in active_products %}
+
+                            <option value="{{ product.id }}">
+
+                                {{ product.product_name }}
+
+                                —
+                                {{ product.sku }}
+
+                                (Available:
+                                {{ product.stock_quantity }})
+
+                            </option>
+
+                            {% endfor %}
+
+                        </select>
+
+                    </div>
+
+
+                    <div class="mb-3">
+
+                        <label class="form-label fw-semibold">
+                            Quantity
+                        </label>
+
+                        <input
+                            type="number"
+                            name="quantity"
+                            class="form-control"
+                            min="1"
+                            required
+                        >
+
+                    </div>
+
+
+                    <div class="mb-3">
+
+                        <label class="form-label fw-semibold">
+                            Note
+                            <span class="text-muted fw-normal">
+                                (Optional)
+                            </span>
+                        </label>
+
+                        <textarea
+                            name="note"
+                            class="form-control"
+                            rows="3"
+                            placeholder="Example: Damaged stock / manual issue"
+                        ></textarea>
+
+                    </div>
+
+                </div>
+
+
+                <div class="modal-footer">
+
+                    <button
+                        type="button"
+                        class="btn btn-light border"
+                        data-bs-dismiss="modal"
+                    >
+                        Cancel
+                    </button>
+
+                    <button
+                        type="submit"
+                        class="btn btn-warning"
+                    >
+                        <i class="bi bi-dash-circle me-1"></i>
+                        Remove Stock
+                    </button>
+
+                </div>
+
+            </form>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+<!-- =====================================================
+     STOCK ADJUSTMENT MODAL
+     ===================================================== -->
+
+<div
+    class="modal fade"
+    id="adjustStockModal"
+    tabindex="-1"
+>
+
+    <div class="modal-dialog modal-dialog-centered">
+
+        <div class="modal-content border-0 shadow">
+
+            <form
+                method="POST"
+                action="{{ url_for('inventory.adjust') }}"
+            >
+
+                <div class="modal-header">
+
+                    <div>
+
+                        <h5 class="modal-title fw-bold">
+
+                            <i class="bi bi-sliders text-secondary me-2"></i>
+
+                            Stock Adjustment
+
+                        </h5>
+
+                        <small class="text-muted">
+                            Correct physical inventory
+                        </small>
+
+                    </div>
+
+
+                    <button
+                        type="button"
+                        class="btn-close"
+                        data-bs-dismiss="modal"
+                    ></button>
+
+                </div>
+
+
+                <div class="modal-body">
+
+                    <div class="alert alert-light border">
+
+                        <i class="bi bi-info-circle me-2"></i>
+
+                        Use this option when physical stock
+                        differs from system stock.
+
+                    </div>
+
+
+                    <div class="mb-3">
+
+                        <label class="form-label fw-semibold">
+                            Product
+                        </label>
+
+                        <select
+                            name="product_id"
+                            class="form-select"
+                            required
+                        >
+
+                            <option value="">
+                                Select Product
+                            </option>
+
+                            {% for product in active_products %}
+
+                            <option value="{{ product.id }}">
+
+                                {{ product.product_name }}
+
+                                —
+                                {{ product.sku }}
+
+                                (Current:
+                                {{ product.stock_quantity }})
+
+                            </option>
+
+                            {% endfor %}
+
+                        </select>
+
+                    </div>
+
+
+                    <div class="mb-3">
+
+                        <label class="form-label fw-semibold">
+                            New Actual Stock
+                        </label>
+
+                        <input
+                            type="number"
+                            name="new_stock"
+                            class="form-control"
+                            min="0"
+                            required
+                        >
+
+                    </div>
+
+
+                    <div class="mb-3">
+
+                        <label class="form-label fw-semibold">
+                            Reason
+                        </label>
+
+                        <textarea
+                            name="note"
+                            class="form-control"
+                            rows="3"
+                            placeholder="Example: Physical stock count correction"
+                        ></textarea>
+
+                    </div>
+
+                </div>
+
+
+                <div class="modal-footer">
+
+                    <button
+                        type="button"
+                        class="btn btn-light border"
+                        data-bs-dismiss="modal"
+                    >
+                        Cancel
+                    </button>
+
+                    <button
+                        type="submit"
+                        class="btn btn-secondary"
+                    >
+                        <i class="bi bi-check2-circle me-1"></i>
+                        Apply Adjustment
+                    </button>
+
+                </div>
+
+            </form>
+
+        </div>
+
+    </div>
+
+</div>
+
+{% endblock %}

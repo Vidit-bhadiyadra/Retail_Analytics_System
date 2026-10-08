@@ -1,0 +1,993 @@
+{% extends "base.html" %}
+
+{% block title %}Sales History{% endblock %}
+
+{% block content %}
+
+<div class="container-fluid py-4">
+
+    <!-- =====================================================
+         PAGE HEADER
+    ====================================================== -->
+
+    <div class="d-flex flex-wrap justify-content-between align-items-center mb-4">
+
+        <div>
+            <span class="text-muted small fw-semibold">
+                SALES MANAGEMENT
+            </span>
+
+            <h2 class="fw-bold mb-1">
+                Sales History
+            </h2>
+
+            <p class="text-muted mb-0">
+                View invoices, payments and completed sales.
+            </p>
+        </div>
+
+        <div class="d-flex gap-2 mt-3 mt-md-0">
+
+            <a href="{{ url_for('billing.billing_index') }}"
+               class="btn btn-primary">
+
+                <i class="bi bi-plus-lg me-1"></i>
+                Create New Bill
+
+            </a>
+
+        </div>
+
+    </div>
+
+
+    <!-- =====================================================
+         FLASH MESSAGES
+    ====================================================== -->
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+
+        {% if messages %}
+
+            {% for category, message in messages %}
+
+                <div class="alert alert-{{ category }} alert-dismissible fade show"
+                     role="alert">
+
+                    <i class="bi
+                        {% if category == 'success' %}
+                            bi-check-circle
+                        {% elif category == 'danger' %}
+                            bi-exclamation-triangle
+                        {% else %}
+                            bi-info-circle
+                        {% endif %}
+                        me-2">
+                    </i>
+
+                    {{ message }}
+
+                    <button type="button"
+                            class="btn-close"
+                            data-bs-dismiss="alert">
+                    </button>
+
+                </div>
+
+            {% endfor %}
+
+        {% endif %}
+
+    {% endwith %}
+
+
+    <!-- =====================================================
+         SALES SUMMARY
+    ====================================================== -->
+
+    <div class="row g-3 mb-4">
+
+        <!-- TOTAL INVOICES -->
+
+        <div class="col-md-4">
+
+            <div class="sales-summary-card">
+
+                <div class="summary-icon primary-icon">
+                    <i class="bi bi-receipt"></i>
+                </div>
+
+                <div>
+
+                    <div class="small text-muted">
+                        Total Invoices
+                    </div>
+
+                    <h4 class="fw-bold mb-0"
+                        id="totalInvoices">
+
+                        {{ sales|length }}
+
+                    </h4>
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <!-- COMPLETED SALES -->
+
+        <div class="col-md-4">
+
+            <div class="sales-summary-card">
+
+                <div class="summary-icon success-icon">
+                    <i class="bi bi-currency-rupee"></i>
+                </div>
+
+                <div>
+
+                    <div class="small text-muted">
+                        Completed Sales
+                    </div>
+
+                    <h4 class="fw-bold mb-0"
+                        id="completedSales">
+
+                        ₹ 0.00
+
+                    </h4>
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <!-- COMPLETED TRANSACTIONS -->
+
+        <div class="col-md-4">
+
+            <div class="sales-summary-card">
+
+                <div class="summary-icon warning-icon">
+                    <i class="bi bi-check2-circle"></i>
+                </div>
+
+                <div>
+
+                    <div class="small text-muted">
+                        Completed Transactions
+                    </div>
+
+                    <h4 class="fw-bold mb-0"
+                        id="completedTransactions">
+
+                        0
+
+                    </h4>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <!-- =====================================================
+         SALES TABLE
+    ====================================================== -->
+
+    <div class="card border-0 shadow-sm sales-card">
+
+        <div class="card-body p-0">
+
+            <!-- TABLE HEADER -->
+
+            <div class="sales-table-header p-4">
+
+                <div>
+
+                    <h5 class="fw-bold mb-1">
+                        All Sales
+                    </h5>
+
+                    <small class="text-muted">
+                        Search invoices and view complete billing details.
+                    </small>
+
+                </div>
+
+
+                <!-- SEARCH -->
+
+                <div class="sales-search">
+
+                    <i class="bi bi-search"></i>
+
+                    <input type="text"
+                           id="salesSearch"
+                           class="form-control"
+                           placeholder="Search invoice, customer, payment...">
+
+                </div>
+
+            </div>
+
+
+            <!-- =================================================
+                 TABLE
+            ================================================== -->
+
+            <div class="table-responsive">
+
+                <table class="table align-middle mb-0 sales-table">
+
+                    <thead>
+
+                        <tr>
+
+                            <th>
+                                Invoice
+                            </th>
+
+                            <th>
+                                Customer
+                            </th>
+
+                            <th>
+                                Date
+                            </th>
+
+                            <th class="text-end">
+                                Subtotal
+                            </th>
+
+                            <th class="text-end">
+                                Discount
+                            </th>
+
+                            <th class="text-end">
+                                Total
+                            </th>
+
+                            <th>
+                                Payment
+                            </th>
+
+                            <th>
+                                Status
+                            </th>
+
+                            <th>
+                                Created By
+                            </th>
+
+                            <th class="text-center">
+                                Action
+                            </th>
+
+                        </tr>
+
+                    </thead>
+
+
+                    <tbody id="salesTableBody">
+
+                        {% for sale in sales %}
+
+                        <tr class="sale-row"
+
+                            data-search="
+                                {{ sale[1]|lower }}
+                                {{ sale[2]|lower }}
+                                {{ sale[7]|lower }}
+                                {{ sale[8]|lower }}
+                                {{ sale[9]|lower }}
+                                {{ sale[10]|lower }}
+                            ">
+
+
+                            <!-- =================================================
+                                 INVOICE
+                            ================================================== -->
+
+                            <td>
+
+                                <a href="{{ url_for(
+                                    'billing.invoice',
+                                    sale_id=sale[0]
+                                ) }}"
+                                   class="invoice-link">
+
+                                    {{ sale[1] }}
+
+                                </a>
+
+                            </td>
+
+
+                            <!-- =================================================
+                                 CUSTOMER
+                            ================================================== -->
+
+                            <td>
+
+                                <div class="fw-semibold">
+
+                                    {{ sale[2] }}
+
+                                </div>
+
+                            </td>
+
+
+                            <!-- =================================================
+                                 DATE
+                            ================================================== -->
+
+                            <td>
+
+                                <div class="fw-semibold small">
+
+                                    {{ sale[3] }}
+
+                                </div>
+
+                            </td>
+
+
+                            <!-- =================================================
+                                 SUBTOTAL
+                            ================================================== -->
+
+                            <td class="text-end">
+
+                                ₹ {{ "%.2f"|format(sale[4]) }}
+
+                            </td>
+
+
+                            <!-- =================================================
+                                 DISCOUNT
+                            ================================================== -->
+
+                            <td class="text-end">
+
+                                {% if sale[5] > 0 %}
+
+                                    <span class="text-danger">
+
+                                        − ₹ {{ "%.2f"|format(sale[5]) }}
+
+                                    </span>
+
+                                {% else %}
+
+                                    <span class="text-muted">
+                                        —
+                                    </span>
+
+                                {% endif %}
+
+                            </td>
+
+
+                            <!-- =================================================
+                                 GRAND TOTAL
+                            ================================================== -->
+
+                            <td class="text-end">
+
+                                <strong>
+
+                                    ₹ {{ "%.2f"|format(sale[6]) }}
+
+                                </strong>
+
+                            </td>
+
+
+                            <!-- =================================================
+                                 PAYMENT
+                            ================================================== -->
+
+                            <td>
+
+                                <span class="payment-badge">
+
+                                    {% if sale[7] == "Cash" %}
+
+                                        <i class="bi bi-cash-stack me-1"></i>
+
+                                    {% elif sale[7] == "UPI" %}
+
+                                        <i class="bi bi-phone me-1"></i>
+
+                                    {% elif sale[7] == "Card" %}
+
+                                        <i class="bi bi-credit-card me-1"></i>
+
+                                    {% else %}
+
+                                        <i class="bi bi-bank me-1"></i>
+
+                                    {% endif %}
+
+                                    {{ sale[7] }}
+
+                                </span>
+
+                            </td>
+
+
+                            <!-- =================================================
+                                 STATUS
+                            ================================================== -->
+
+                            <td>
+
+                                {% if sale[9] == "Cancelled" %}
+
+                                    <span class="status-badge cancelled">
+
+                                        <i class="bi bi-x-circle me-1"></i>
+
+                                        Cancelled
+
+                                    </span>
+
+                                {% else %}
+
+                                    <span class="status-badge completed">
+
+                                        <i class="bi bi-check-circle me-1"></i>
+
+                                        Completed
+
+                                    </span>
+
+                                {% endif %}
+
+                            </td>
+
+
+                            <!-- =================================================
+                                 CREATED BY
+                            ================================================== -->
+
+                            <td>
+
+                                <span class="small">
+
+                                    {{ sale[10] }}
+
+                                </span>
+
+                            </td>
+
+
+                            <!-- =================================================
+                                 ACTION
+                            ================================================== -->
+
+                            <td class="text-center">
+
+                                <a href="{{ url_for(
+                                    'billing.invoice',
+                                    sale_id=sale[0]
+                                ) }}"
+                                   class="btn btn-sm btn-outline-primary"
+                                   title="View Invoice">
+
+                                    <i class="bi bi-eye"></i>
+
+                                </a>
+
+                            </td>
+
+                        </tr>
+
+                        {% else %}
+
+                        <!-- =================================================
+                             NO SALES
+                        ================================================== -->
+
+                        <tr id="noSalesRow">
+
+                            <td colspan="10"
+                                class="text-center py-5">
+
+                                <div class="empty-sales">
+
+                                    <i class="bi bi-receipt display-5"></i>
+
+                                    <h6 class="fw-bold mt-3">
+                                        No sales yet
+                                    </h6>
+
+                                    <p class="text-muted small mb-3">
+
+                                        Create your first invoice to see it here.
+
+                                    </p>
+
+                                    <a href="{{ url_for('billing.billing_index') }}"
+                                       class="btn btn-primary btn-sm">
+
+                                        <i class="bi bi-plus-lg me-1"></i>
+
+                                        Create First Bill
+
+                                    </a>
+
+                                </div>
+
+                            </td>
+
+                        </tr>
+
+                        {% endfor %}
+
+
+                        <!-- =================================================
+                             NO SEARCH RESULTS
+                        ================================================== -->
+
+                        <tr id="noSearchResults"
+                            style="display: none;">
+
+                            <td colspan="10"
+                                class="text-center py-5 text-muted">
+
+                                <i class="bi bi-search display-6"></i>
+
+                                <div class="mt-2 fw-semibold">
+
+                                    No matching sales found.
+
+                                </div>
+
+                            </td>
+
+                        </tr>
+
+                    </tbody>
+
+                </table>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+<!-- =========================================================
+     STYLES
+========================================================== -->
+
+<style>
+
+    .sales-summary-card {
+
+        background: #ffffff;
+
+        border-radius: 15px;
+
+        padding: 18px;
+
+        display: flex;
+
+        align-items: center;
+
+        gap: 15px;
+
+        box-shadow: 0 5px 20px rgba(0, 0, 0, 0.05);
+
+        border: 1px solid #f0f0f0;
+
+    }
+
+
+    .summary-icon {
+
+        width: 48px;
+
+        height: 48px;
+
+        border-radius: 13px;
+
+        display: flex;
+
+        align-items: center;
+
+        justify-content: center;
+
+        font-size: 21px;
+
+    }
+
+
+    .primary-icon {
+
+        background: rgba(13, 110, 253, 0.1);
+
+        color: #0d6efd;
+
+    }
+
+
+    .success-icon {
+
+        background: rgba(25, 135, 84, 0.1);
+
+        color: #198754;
+
+    }
+
+
+    .warning-icon {
+
+        background: rgba(255, 193, 7, 0.15);
+
+        color: #b88600;
+
+    }
+
+
+    .sales-card {
+
+        border-radius: 18px;
+
+        overflow: hidden;
+
+    }
+
+
+    .sales-table-header {
+
+        display: flex;
+
+        justify-content: space-between;
+
+        align-items: center;
+
+        gap: 20px;
+
+        border-bottom: 1px solid #eeeeee;
+
+    }
+
+
+    .sales-search {
+
+        position: relative;
+
+        width: 320px;
+
+    }
+
+
+    .sales-search i {
+
+        position: absolute;
+
+        left: 13px;
+
+        top: 50%;
+
+        transform: translateY(-50%);
+
+        color: #6c757d;
+
+        z-index: 2;
+
+    }
+
+
+    .sales-search input {
+
+        padding-left: 38px;
+
+        border-radius: 10px;
+
+    }
+
+
+    .sales-table thead th {
+
+        background: #f8f9fa;
+
+        color: #6c757d;
+
+        font-size: 11px;
+
+        text-transform: uppercase;
+
+        letter-spacing: 0.5px;
+
+        white-space: nowrap;
+
+        padding: 14px 16px;
+
+        border-bottom: 1px solid #e9ecef;
+
+    }
+
+
+    .sales-table tbody td {
+
+        padding: 15px 16px;
+
+        border-bottom: 1px solid #f1f1f1;
+
+        white-space: nowrap;
+
+    }
+
+
+    .sales-table tbody tr {
+
+        transition: background 0.15s ease;
+
+    }
+
+
+    .sales-table tbody tr:hover {
+
+        background: #fafcff;
+
+    }
+
+
+    .invoice-link {
+
+        color: #0d6efd;
+
+        text-decoration: none;
+
+        font-weight: 700;
+
+    }
+
+
+    .invoice-link:hover {
+
+        text-decoration: underline;
+
+    }
+
+
+    .payment-badge {
+
+        background: #f5f7fa;
+
+        border-radius: 20px;
+
+        padding: 6px 10px;
+
+        font-size: 12px;
+
+        font-weight: 600;
+
+        color: #495057;
+
+    }
+
+
+    .status-badge {
+
+        display: inline-flex;
+
+        align-items: center;
+
+        border-radius: 20px;
+
+        padding: 6px 10px;
+
+        font-size: 11px;
+
+        font-weight: 700;
+
+    }
+
+
+    .status-badge.completed {
+
+        background: rgba(25, 135, 84, 0.1);
+
+        color: #198754;
+
+    }
+
+
+    .status-badge.cancelled {
+
+        background: rgba(220, 53, 69, 0.1);
+
+        color: #dc3545;
+
+    }
+
+
+    .extra-small {
+
+        font-size: 11px;
+
+    }
+
+
+    .empty-sales {
+
+        padding: 25px;
+
+        color: #6c757d;
+
+    }
+
+
+    @media (max-width: 991px) {
+
+        .sales-table-header {
+
+            flex-direction: column;
+
+            align-items: stretch;
+
+        }
+
+
+        .sales-search {
+
+            width: 100%;
+
+        }
+
+    }
+
+</style>
+
+
+<!-- =========================================================
+     JAVASCRIPT
+========================================================== -->
+
+<script>
+
+    // =====================================================
+    // SALES SEARCH
+    // =====================================================
+
+    const salesSearch =
+        document.getElementById("salesSearch");
+
+
+    const saleRows =
+        document.querySelectorAll(".sale-row");
+
+
+    const noSearchResults =
+        document.getElementById("noSearchResults");
+
+
+    if (salesSearch) {
+
+        salesSearch.addEventListener(
+            "input",
+            function() {
+
+                const search =
+                    this.value
+                        .toLowerCase()
+                        .trim();
+
+
+                let visibleRows = 0;
+
+
+                saleRows.forEach(
+                    function(row) {
+
+                        const rowText =
+                            row.dataset.search
+                                .toLowerCase();
+
+
+                        if (
+                            rowText.includes(search)
+                        ) {
+
+                            row.style.display = "";
+
+                            visibleRows++;
+
+                        } else {
+
+                            row.style.display = "none";
+
+                        }
+
+                    }
+                );
+
+
+                if (noSearchResults) {
+
+                    noSearchResults.style.display =
+                        (
+                            visibleRows === 0 &&
+                            search !== ""
+                        )
+                            ? ""
+                            : "none";
+
+                }
+
+            }
+        );
+
+    }
+
+
+    // =====================================================
+    // SALES SUMMARY
+    // =====================================================
+
+    let completedTotal = 0;
+
+    let completedCount = 0;
+
+
+    {% for sale in sales %}
+
+        {% if sale[9] != "Cancelled" %}
+
+            completedTotal += {{ sale[6] }};
+
+            completedCount++;
+
+        {% endif %}
+
+    {% endfor %}
+
+
+    const completedSales =
+        document.getElementById(
+            "completedSales"
+        );
+
+
+    const completedTransactions =
+        document.getElementById(
+            "completedTransactions"
+        );
+
+
+    if (completedSales) {
+
+        completedSales.innerText =
+            "₹ " +
+            completedTotal.toFixed(2);
+
+    }
+
+
+    if (completedTransactions) {
+
+        completedTransactions.innerText =
+            completedCount;
+
+    }
+
+</script>
+
+{% endblock %}

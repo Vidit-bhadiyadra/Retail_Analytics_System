@@ -1,0 +1,3123 @@
+{% extends "base.html" %}
+
+{% block title %}Billing & Sales{% endblock %}
+
+{% block content %}
+
+<div class="container-fluid py-4">
+
+    <!-- =====================================================
+         PAGE HEADER
+    ====================================================== -->
+
+    <div class="d-flex flex-wrap justify-content-between align-items-center mb-4">
+
+        <div>
+            <span class="text-muted small fw-semibold">
+                SALES MANAGEMENT
+            </span>
+
+            <h2 class="fw-bold mb-1">
+                Billing & Sales
+            </h2>
+
+            <p class="text-muted mb-0">
+                Create invoices, manage customers and process sales.
+            </p>
+        </div>
+
+        <div class="d-flex gap-2 mt-3 mt-md-0">
+
+            <a href="{{ url_for('billing.sales_history') }}"
+               class="btn btn-outline-primary">
+                <i class="bi bi-clock-history me-1"></i>
+                Sales History
+            </a>
+
+            <div class="px-3 py-2 bg-light rounded-3 border">
+                <small class="text-muted d-block">
+                    Invoice Number
+                </small>
+
+                <strong class="text-primary">
+                    {{ invoice_number }}
+                </strong>
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <!-- =====================================================
+         FLASH MESSAGES
+    ====================================================== -->
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+
+        {% if messages %}
+
+            {% for category, message in messages %}
+
+                <div class="alert alert-{{ category }} alert-dismissible fade show"
+                     role="alert">
+
+                    <i class="bi
+                    {% if category == 'success' %}
+                        bi-check-circle
+                    {% elif category == 'danger' %}
+                        bi-exclamation-triangle
+                    {% else %}
+                        bi-info-circle
+                    {% endif %}
+                    me-2"></i>
+
+                    {{ message }}
+
+                    <button type="button"
+                            class="btn-close"
+                            data-bs-dismiss="alert">
+                    </button>
+
+                </div>
+
+            {% endfor %}
+
+        {% endif %}
+
+    {% endwith %}
+
+
+    <!-- =====================================================
+         MAIN BILLING FORM
+    ====================================================== -->
+
+    <form method="POST"
+          action="{{ url_for('billing.create_billing') }}"
+          id="billingForm">
+
+        <div class="row g-4">
+
+
+            <!-- =================================================
+                 LEFT SIDE
+            ================================================== -->
+
+            <div class="col-xl-8">
+
+                <!-- =============================================
+                     CUSTOMER SECTION
+                ============================================== -->
+
+                <div class="card border-0 shadow-sm rounded-4 mb-4">
+
+                    <div class="card-body p-4">
+
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+
+                            <div>
+                                <h5 class="fw-bold mb-1">
+                                    <i class="bi bi-person-circle text-primary me-2"></i>
+                                    Customer
+                                </h5>
+
+                                <small class="text-muted">
+                                    Select an existing customer or add a new one.
+                                </small>
+                            </div>
+
+                            <button type="button"
+                                    class="btn btn-primary btn-sm"
+                                    onclick="openNewCustomerModal()">
+
+                                <i class="bi bi-person-plus me-1"></i>
+                                New Customer
+
+                            </button>
+
+                        </div>
+
+
+                        <!-- Hidden customer ID -->
+
+                        <input type="hidden"
+                               name="customer_id"
+                               id="customerId"
+                               value="">
+
+
+                        <!-- Customer search -->
+
+                        <div class="position-relative">
+
+                            <div class="input-group">
+
+                                <span class="input-group-text bg-white">
+                                    <i class="bi bi-search text-muted"></i>
+                                </span>
+
+                                <input type="text"
+                                       class="form-control"
+                                       id="customerSearch"
+                                       placeholder="Search customer by name or phone..."
+                                       autocomplete="off">
+
+                                <button type="button"
+                                        class="btn btn-outline-secondary"
+                                        onclick="clearCustomer()">
+
+                                    <i class="bi bi-x-lg"></i>
+
+                                </button>
+
+                            </div>
+
+
+                            <!-- Search results -->
+
+                            <div id="customerResults"
+                                 class="customer-results shadow-sm">
+                            </div>
+
+                        </div>
+
+
+                        <!-- Selected customer -->
+
+                        <div id="customerInfoCard"
+                             class="customer-info-card mt-3 d-none">
+
+                            <div class="d-flex justify-content-between align-items-start">
+
+                                <div class="d-flex align-items-center">
+
+                                    <div class="customer-avatar me-3">
+                                        <i class="bi bi-person-fill"></i>
+                                    </div>
+
+                                    <div>
+
+                                        <h6 class="fw-bold mb-1"
+                                            id="selectedCustomerName">
+                                        </h6>
+
+                                        <div class="small text-muted"
+                                             id="selectedCustomerPhone">
+                                        </div>
+
+                                    </div>
+
+                                </div>
+
+                                <span class="badge bg-success-subtle text-success">
+                                    Selected
+                                </span>
+
+                            </div>
+
+
+                            <hr>
+
+
+                            <div class="row g-3">
+
+                                <div class="col-md-4">
+
+                                    <small class="text-muted d-block">
+                                        Email
+                                    </small>
+
+                                    <span id="selectedCustomerEmail">
+                                        —
+                                    </span>
+
+                                </div>
+
+
+                                <div class="col-md-4">
+
+                                    <small class="text-muted d-block">
+                                        Gender
+                                    </small>
+
+                                    <span id="selectedCustomerGender">
+                                        —
+                                    </span>
+
+                                </div>
+
+
+                                <div class="col-md-4">
+
+                                    <small class="text-muted d-block">
+                                        City
+                                    </small>
+
+                                    <span id="selectedCustomerCity">
+                                        —
+                                    </span>
+
+                                </div>
+
+
+                                <div class="col-12">
+
+                                    <small class="text-muted d-block">
+                                        Address
+                                    </small>
+
+                                    <span id="selectedCustomerAddress">
+                                        —
+                                    </span>
+
+                                </div>
+
+                            </div>
+
+                        </div>
+
+
+                        <!-- Walk-in -->
+
+                        <div id="noCustomerCard"
+                             class="mt-3 p-3 rounded-3 bg-light border">
+
+                            <div class="d-flex align-items-center">
+
+                                <div class="me-3 text-secondary fs-4">
+                                    <i class="bi bi-person"></i>
+                                </div>
+
+                                <div>
+
+                                    <strong>
+                                        No customer selected
+                                    </strong>
+
+                                    <div class="small text-muted">
+                                        Add or select a customer for this sale.
+                                    </div>
+
+                                </div>
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+
+                <!-- =============================================
+                     PRODUCTS
+                ============================================== -->
+
+                <div class="card border-0 shadow-sm rounded-4 mb-4">
+
+                    <div class="card-body p-4">
+
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+
+                            <div>
+
+                                <h5 class="fw-bold mb-1">
+
+                                    <i class="bi bi-box-seam text-primary me-2"></i>
+
+                                    Select Products
+
+                                </h5>
+
+                                <small class="text-muted">
+                                    Click a product to add it to the bill.
+                                </small>
+
+                            </div>
+
+                            <span class="badge bg-primary-subtle text-primary">
+
+                                {{ products|length }} Products
+
+                            </span>
+
+                        </div>
+
+
+                        <!-- Product Search -->
+
+                        <div class="input-group mb-4">
+
+                            <span class="input-group-text bg-white">
+
+                                <i class="bi bi-search text-muted"></i>
+
+                            </span>
+
+                            <input type="text"
+                                   id="productSearch"
+                                   class="form-control"
+                                   placeholder="Search product by name, brand or SKU...">
+
+                        </div>
+
+
+                        <!-- PRODUCT GRID -->
+
+                        <div class="row g-3"
+                             id="productGrid">
+
+                            {% for product in products %}
+
+                                <div class="col-md-6 col-lg-4 product-wrapper">
+
+                                    <div class="product-select-card
+                                        {% if product[5] <= 0 %}
+                                            out-of-stock
+                                        {% endif %}"
+
+                                         data-product-id="{{ product[0] }}"
+                                         data-product-name="{{ product[1] }}"
+                                         data-product-price="{{ product[4] }}"
+                                         data-product-stock="{{ product[5] }}"
+                                         data-product-brand="{{ product[2] or '' }}"
+                                         data-product-sku="{{ product[3] or '' }}"
+                                         data-product-unit="{{ product[6] or 'Piece' }}"
+                                         role="button"
+                                         tabindex="0">
+
+
+                                        <!-- Product image -->
+
+                                        <div class="product-image-wrapper">
+
+                                            {% if product[7] %}
+
+                                                <img src="{{ url_for(
+                                                    'static',
+                                                    filename='uploads/products/' + product[7]
+                                                ) }}"
+                                                     class="product-image"
+                                                     alt="{{ product[1] }}">
+
+                                            {% else %}
+
+                                                <div class="product-placeholder">
+
+                                                    <i class="bi bi-box-seam"></i>
+
+                                                </div>
+
+                                            {% endif %}
+
+
+                                            {% if product[5] <= 0 %}
+
+                                                <span class="stock-badge out">
+                                                    Out of Stock
+                                                </span>
+
+                                            {% elif product[5] <= 5 %}
+
+                                                <span class="stock-badge low">
+                                                    Low Stock
+                                                </span>
+
+                                            {% else %}
+
+                                                <span class="stock-badge">
+                                                    {{ product[5] }} {{ product[6] }}
+                                                </span>
+
+                                            {% endif %}
+
+                                        </div>
+
+
+                                        <!-- Product information -->
+
+                                        <div class="p-3">
+
+                                            <div class="small text-muted mb-1">
+
+                                                {{ product[3] }}
+
+                                            </div>
+
+                                            <h6 class="fw-bold mb-1 product-name">
+
+                                                {{ product[1] }}
+
+                                            </h6>
+
+
+                                            {% if product[2] %}
+
+                                                <div class="small text-muted mb-2">
+
+                                                    {{ product[2] }}
+
+                                                </div>
+
+                                            {% endif %}
+
+
+                                            <div class="d-flex justify-content-between align-items-center">
+
+                                                <strong class="text-primary fs-6">
+
+                                                    ₹{{ "%.2f"|format(product[4]|float) }}
+
+                                                </strong>
+
+                                                <small class="text-muted">
+
+                                                    / {{ product[6] }}
+
+                                                </small>
+
+                                            </div>
+
+                                        </div>
+
+                                    </div>
+
+                                </div>
+
+                            {% endfor %}
+
+
+                            <!-- No product -->
+
+                            <div id="noProductsMessage"
+                                 class="col-12 text-center py-5 d-none">
+
+                                <div class="text-muted">
+
+                                    <i class="bi bi-search fs-1 d-block mb-3"></i>
+
+                                    <h6 class="fw-bold">
+                                        No products found
+                                    </h6>
+
+                                    <p class="small mb-0">
+                                        Try another product name, brand or SKU.
+                                    </p>
+
+                                </div>
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+
+                <!-- =============================================
+                     BILL ITEMS
+                ============================================== -->
+
+                <div class="card border-0 shadow-sm rounded-4">
+
+                    <div class="card-body p-4">
+
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+
+                            <div>
+
+                                <h5 class="fw-bold mb-1">
+
+                                    <i class="bi bi-cart3 text-primary me-2"></i>
+
+                                    Current Bill
+
+                                </h5>
+
+                                <small class="text-muted">
+                                    Review products and quantities before creating invoice.
+                                </small>
+
+                            </div>
+
+                            <span class="badge bg-light text-dark"
+                                  id="itemCountBadge">
+
+                                0 Items
+
+                            </span>
+
+                        </div>
+
+
+                        <div class="table-responsive">
+
+                            <table class="table align-middle mb-0">
+
+                                <thead class="table-light">
+
+                                    <tr>
+
+                                        <th style="min-width:220px;">
+                                            Product
+                                        </th>
+
+                                        <th>
+                                            Price
+                                        </th>
+
+                                        <th style="width:150px;">
+                                            Quantity
+                                        </th>
+
+                                        <th>
+                                            Discount
+                                        </th>
+
+                                        <th>
+                                            Total
+                                        </th>
+
+                                        <th class="text-end">
+                                        </th>
+
+                                    </tr>
+
+                                </thead>
+
+
+                                <tbody id="billItems">
+
+                                    <tr id="emptyBillRow">
+
+                                        <td colspan="6"
+                                            class="text-center py-5">
+
+                                            <div class="text-muted">
+
+                                                <i class="bi bi-cart-x fs-1 d-block mb-3"></i>
+
+                                                <h6 class="fw-bold">
+                                                    No products added
+                                                </h6>
+
+                                                <p class="small mb-0">
+                                                    Click a product above to add it to the bill.
+                                                </p>
+
+                                            </div>
+
+                                        </td>
+
+                                    </tr>
+
+                                </tbody>
+
+                            </table>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <!-- =================================================
+                 RIGHT SIDE
+            ================================================== -->
+
+            <div class="col-xl-4">
+
+                <div class="card border-0 shadow-sm rounded-4 sticky-billing">
+
+                    <div class="card-body p-4">
+
+                        <h5 class="fw-bold mb-4">
+
+                            <i class="bi bi-receipt text-primary me-2"></i>
+
+                            Bill Summary
+
+                        </h5>
+
+
+                        <!-- Subtotal -->
+
+                        <div class="summary-row">
+
+                            <span>
+                                Subtotal
+                            </span>
+
+                            <strong>
+                                ₹<span id="subtotalDisplay">0.00</span>
+                            </strong>
+
+                        </div>
+
+
+                        <!-- Item discount -->
+
+                        <div class="summary-row">
+
+                            <span>
+                                Item Discount
+                            </span>
+
+                            <strong class="text-danger">
+                                - ₹<span id="itemDiscountDisplay">0.00</span>
+                            </strong>
+
+                        </div>
+
+
+                        <!-- Overall discount -->
+
+                        <div class="mb-3 mt-3">
+
+                            <label class="form-label fw-semibold">
+                                Overall Discount
+                            </label>
+
+                            <div class="input-group">
+
+                                <span class="input-group-text">
+                                    ₹
+                                </span>
+
+                                <input type="number"
+                                       name="discount"
+                                       id="discount"
+                                       class="form-control"
+                                       value="0"
+                                       min="0"
+                                       step="0.01">
+
+                            </div>
+
+                        </div>
+
+
+                        <!-- Tax -->
+
+                        <div class="mb-3">
+
+                            <label class="form-label fw-semibold">
+                                GST / Tax
+                            </label>
+
+                            <div class="input-group">
+
+                                <input type="number"
+                                       name="tax"
+                                       id="tax"
+                                       class="form-control"
+                                       value="0"
+                                       min="0"
+                                       step="0.01">
+
+                                <span class="input-group-text">
+                                    ₹
+                                </span>
+
+                            </div>
+
+                        </div>
+
+
+                        <hr>
+
+
+                        <!-- Grand Total -->
+
+                        <div class="grand-total-box mb-4">
+
+                            <div>
+
+                                <small class="text-muted">
+                                    Grand Total
+                                </small>
+
+                                <h3 class="fw-bold mb-0 text-primary">
+
+                                    ₹<span id="grandTotalDisplay">
+                                        0.00
+                                    </span>
+
+                                </h3>
+
+                            </div>
+
+                            <div class="grand-total-icon">
+
+                                <i class="bi bi-currency-rupee"></i>
+
+                            </div>
+
+                        </div>
+
+
+                        <!-- Hidden billing values -->
+
+                        <input type="hidden"
+                               name="subtotal"
+                               id="subtotal">
+
+                        <input type="hidden"
+                               name="grand_total"
+                               id="grand_total">
+
+
+                        <!-- Payment method -->
+
+                        <div class="mb-4">
+
+                            <label class="form-label fw-semibold">
+                                Payment Method
+                            </label>
+
+                            <select name="payment_method"
+                                    id="paymentMethod"
+                                    class="form-select">
+
+                                <option value="Cash">
+                                    Cash
+                                </option>
+
+                                <option value="UPI">
+                                    UPI
+                                </option>
+
+                                <option value="Card">
+                                    Card
+                                </option>
+
+                                <option value="Bank Transfer">
+                                    Bank Transfer
+                                </option>
+
+                            </select>
+
+                        </div>
+
+
+                        <!-- Create Bill -->
+
+                        <button type="submit"
+                                id="createBillBtn"
+                                class="btn btn-primary btn-lg w-100"
+                                disabled>
+
+                            <i class="bi bi-check-circle me-2"></i>
+
+                            Create Invoice
+
+                        </button>
+
+
+                        <div class="text-center mt-3">
+
+                            <small class="text-muted">
+
+                                <i class="bi bi-shield-check me-1"></i>
+
+                                Stock will automatically be deducted after sale.
+
+                            </small>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </form>
+
+</div>
+
+
+<!-- =========================================================
+     NEW CUSTOMER MODAL
+========================================================== -->
+
+<div class="modal fade"
+     id="newCustomerModal"
+     tabindex="-1"
+     aria-hidden="true">
+
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+
+        <div class="modal-content border-0 shadow-lg rounded-4">
+
+            <div class="modal-header border-0 p-4">
+
+                <div>
+
+                    <h5 class="modal-title fw-bold">
+
+                        <i class="bi bi-person-plus text-primary me-2"></i>
+
+                        Add New Customer
+
+                    </h5>
+
+                    <small class="text-muted">
+                        Customer details will also be saved in the Customers module.
+                    </small>
+
+                </div>
+
+                <button type="button"
+                        class="btn-close"
+                        data-bs-dismiss="modal">
+                </button>
+
+            </div>
+
+
+            <form id="newCustomerForm">
+
+                <div class="modal-body px-4 pb-4">
+
+                    <div id="customerFormMessage"
+                         class="alert d-none">
+                    </div>
+
+
+                    <div class="row g-3">
+
+
+                        <!-- Name -->
+
+                        <div class="col-md-6">
+
+                            <label class="form-label fw-semibold">
+
+                                Customer Name
+                                <span class="text-danger">*</span>
+
+                            </label>
+
+                            <input type="text"
+                                   name="customer_name"
+                                   class="form-control"
+                                   placeholder="Enter customer name"
+                                   required>
+
+                        </div>
+
+
+                        <!-- Phone -->
+
+                        <div class="col-md-6">
+
+                            <label class="form-label fw-semibold">
+
+                                Phone
+                                <span class="text-danger">*</span>
+
+                            </label>
+
+                            <input type="text"
+                                   name="phone"
+                                   class="form-control"
+                                   placeholder="Enter phone number"
+                                   required>
+
+                        </div>
+
+
+                        <!-- Email -->
+
+                        <div class="col-md-6">
+
+                            <label class="form-label fw-semibold">
+                                Email
+                            </label>
+
+                            <input type="email"
+                                   name="email"
+                                   class="form-control"
+                                   placeholder="customer@example.com">
+
+                        </div>
+
+
+                        <!-- Gender -->
+
+                        <div class="col-md-6">
+
+                            <label class="form-label fw-semibold">
+                                Gender
+                            </label>
+
+                            <select name="gender"
+                                    class="form-select">
+
+                                <option value="">
+                                    Select Gender
+                                </option>
+
+                                <option value="Male">
+                                    Male
+                                </option>
+
+                                <option value="Female">
+                                    Female
+                                </option>
+
+                                <option value="Other">
+                                    Other
+                                </option>
+
+                            </select>
+
+                        </div>
+
+
+                        <!-- City -->
+
+                        <div class="col-md-6">
+
+                            <label class="form-label fw-semibold">
+                                City
+                            </label>
+
+                            <input type="text"
+                                   name="city"
+                                   class="form-control"
+                                   placeholder="Enter city">
+
+                        </div>
+
+
+                        <!-- Status -->
+
+                        <div class="col-md-6">
+
+                            <label class="form-label fw-semibold">
+                                Status
+                            </label>
+
+                            <select name="status"
+                                    class="form-select">
+
+                                <option value="Active">
+                                    Active
+                                </option>
+
+                                <option value="Inactive">
+                                    Inactive
+                                </option>
+
+                            </select>
+
+                        </div>
+
+
+                        <!-- Address -->
+
+                        <div class="col-12">
+
+                            <label class="form-label fw-semibold">
+                                Address
+                            </label>
+
+                            <textarea name="address"
+                                      class="form-control"
+                                      rows="3"
+                                      placeholder="Enter customer address"></textarea>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+
+                <div class="modal-footer border-0 px-4 pb-4">
+
+                    <button type="button"
+                            class="btn btn-light"
+                            data-bs-dismiss="modal">
+
+                        Cancel
+
+                    </button>
+
+                    <button type="submit"
+                            class="btn btn-primary"
+                            id="saveCustomerBtn">
+
+                        <i class="bi bi-check-circle me-1"></i>
+
+                        Save Customer
+
+                    </button>
+
+                </div>
+
+            </form>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+<!-- =========================================================
+     STYLES
+========================================================== -->
+
+<style>
+
+    .sticky-billing {
+        position: sticky;
+        top: 90px;
+    }
+
+
+    /* ==========================================
+       PRODUCT CARD
+    =========================================== */
+
+    .product-select-card {
+
+        background: #fff;
+
+        border: 1px solid #e9ecef;
+
+        border-radius: 16px;
+
+        overflow: hidden;
+
+        cursor: pointer;
+
+        transition:
+            transform 0.2s ease,
+            box-shadow 0.2s ease,
+            border-color 0.2s ease;
+
+        height: 100%;
+
+    }
+
+
+    .product-select-card:hover {
+
+        transform: translateY(-3px);
+
+        border-color: rgba(13, 110, 253, 0.45);
+
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
+
+    }
+
+
+    .product-select-card:focus {
+
+        outline: none;
+
+        border-color: #0d6efd;
+
+        box-shadow:
+            0 0 0 3px rgba(13, 110, 253, 0.15);
+
+    }
+
+
+    .product-select-card.out-of-stock {
+
+        cursor: not-allowed;
+
+        opacity: 0.65;
+
+    }
+
+
+    .product-select-card.out-of-stock:hover {
+
+        transform: none;
+
+        box-shadow: none;
+
+    }
+
+
+    .product-image-wrapper {
+
+        height: 145px;
+
+        background: #f8f9fa;
+
+        position: relative;
+
+        display: flex;
+
+        align-items: center;
+
+        justify-content: center;
+
+    }
+
+
+    .product-image {
+
+        width: 100%;
+
+        height: 100%;
+
+        object-fit: cover;
+
+    }
+
+
+    .product-placeholder {
+
+        font-size: 45px;
+
+        color: #adb5bd;
+
+    }
+
+
+    .stock-badge {
+
+        position: absolute;
+
+        top: 10px;
+
+        right: 10px;
+
+        background: rgba(25, 135, 84, 0.95);
+
+        color: #fff;
+
+        font-size: 11px;
+
+        font-weight: 600;
+
+        padding: 5px 8px;
+
+        border-radius: 20px;
+
+    }
+
+
+    .stock-badge.low {
+
+        background: rgba(255, 193, 7, 0.95);
+
+        color: #212529;
+
+    }
+
+
+    .stock-badge.out {
+
+        background: rgba(220, 53, 69, 0.95);
+
+        color: #fff;
+
+    }
+
+
+    /* ==========================================
+       CUSTOMER
+    =========================================== */
+
+    .customer-results {
+
+        position: absolute;
+
+        left: 0;
+
+        right: 0;
+
+        top: calc(100% + 5px);
+
+        background: #fff;
+
+        border: 1px solid #dee2e6;
+
+        border-radius: 12px;
+
+        z-index: 1050;
+
+        max-height: 280px;
+
+        overflow-y: auto;
+
+        display: none;
+
+    }
+
+
+    .customer-result-item {
+
+        padding: 12px 15px;
+
+        cursor: pointer;
+
+        border-bottom: 1px solid #f1f3f5;
+
+        transition: background 0.15s ease;
+
+    }
+
+
+    .customer-result-item:hover {
+
+        background: #f8f9fa;
+
+    }
+
+
+    .customer-result-item:last-child {
+
+        border-bottom: 0;
+
+    }
+
+
+    .customer-info-card {
+
+        background: #f8fbff;
+
+        border: 1px solid #dcecff;
+
+        border-radius: 14px;
+
+        padding: 18px;
+
+    }
+
+
+    .customer-avatar {
+
+        width: 45px;
+
+        height: 45px;
+
+        border-radius: 50%;
+
+        background: #e7f1ff;
+
+        color: #0d6efd;
+
+        display: flex;
+
+        align-items: center;
+
+        justify-content: center;
+
+        font-size: 20px;
+
+    }
+
+
+    /* ==========================================
+       BILL SUMMARY
+    =========================================== */
+
+    .summary-row {
+
+        display: flex;
+
+        justify-content: space-between;
+
+        align-items: center;
+
+        margin-bottom: 12px;
+
+        color: #495057;
+
+    }
+
+
+    .grand-total-box {
+
+        display: flex;
+
+        justify-content: space-between;
+
+        align-items: center;
+
+        padding: 18px;
+
+        background: #f5f9ff;
+
+        border: 1px solid #dbeafe;
+
+        border-radius: 15px;
+
+    }
+
+
+    .grand-total-icon {
+
+        width: 48px;
+
+        height: 48px;
+
+        border-radius: 12px;
+
+        background: #e7f1ff;
+
+        color: #0d6efd;
+
+        display: flex;
+
+        align-items: center;
+
+        justify-content: center;
+
+        font-size: 22px;
+
+    }
+
+
+    /* ==========================================
+       TABLE
+    =========================================== */
+
+    #billItems td {
+
+        vertical-align: middle;
+
+    }
+
+
+    .quantity-control {
+
+        display: inline-flex;
+
+        align-items: center;
+
+        border: 1px solid #dee2e6;
+
+        border-radius: 8px;
+
+        overflow: hidden;
+
+    }
+
+
+    .quantity-control button {
+
+        width: 32px;
+
+        height: 32px;
+
+        border: 0;
+
+        background: #f8f9fa;
+
+    }
+
+
+    .quantity-control button:hover {
+
+        background: #e9ecef;
+
+    }
+
+
+    .quantity-control input {
+
+        width: 45px;
+
+        height: 32px;
+
+        border: 0;
+
+        text-align: center;
+
+        outline: none;
+
+    }
+
+
+    .item-discount-input {
+
+        width: 90px;
+
+    }
+
+
+    @media (max-width: 1199px) {
+
+        .sticky-billing {
+
+            position: static;
+
+        }
+
+    }
+
+
+    @media (max-width: 768px) {
+
+        .product-image-wrapper {
+
+            height: 120px;
+
+        }
+
+    }
+
+</style>
+
+
+<!-- =========================================================
+     JAVASCRIPT
+========================================================== -->
+
+<script>
+
+document.addEventListener("DOMContentLoaded", function () {
+
+    /* =====================================================
+       GLOBAL BILL DATA
+    ====================================================== */
+
+    let billItems = {};
+
+    let selectedCustomer = null;
+
+    const customers = {{ customers|tojson }};
+
+
+    /* =====================================================
+       DOM ELEMENTS
+    ====================================================== */
+
+    const billItemsBody =
+        document.getElementById("billItems");
+
+    const productGrid =
+        document.getElementById("productGrid");
+
+    const customerSearch =
+        document.getElementById("customerSearch");
+
+    const customerResults =
+        document.getElementById("customerResults");
+
+    const customerId =
+        document.getElementById("customerId");
+
+    const createBillBtn =
+        document.getElementById("createBillBtn");
+
+    const billingForm =
+        document.getElementById("billingForm");
+
+
+    /* =====================================================
+       PRODUCT CLICK HANDLER
+       EVENT DELEGATION
+    ====================================================== */
+
+    productGrid.addEventListener("click", function (event) {
+
+        const card =
+            event.target.closest(".product-select-card");
+
+        if (!card) {
+            return;
+        }
+
+        if (card.classList.contains("out-of-stock")) {
+            return;
+        }
+
+        const productId =
+            Number(card.dataset.productId);
+
+        const productName =
+            card.dataset.productName || "";
+
+        const price =
+            Number(card.dataset.productPrice);
+
+        const stock =
+            Number(card.dataset.productStock);
+
+        console.log(
+            "Product clicked:",
+            {
+                productId,
+                productName,
+                price,
+                stock
+            }
+        );
+
+
+        if (!productId) {
+
+            console.error(
+                "Invalid product ID:",
+                card.dataset
+            );
+
+            return;
+        }
+
+
+        if (isNaN(price)) {
+
+            console.error(
+                "Invalid product price:",
+                card.dataset
+            );
+
+            return;
+        }
+
+
+        if (isNaN(stock)) {
+
+            console.error(
+                "Invalid product stock:",
+                card.dataset
+            );
+
+            return;
+        }
+
+
+        addProduct(
+            productId,
+            productName,
+            price,
+            stock
+        );
+
+    });
+
+
+    /* =====================================================
+       KEYBOARD PRODUCT SELECTION
+    ====================================================== */
+
+    productGrid.addEventListener("keydown", function (event) {
+
+        if (
+            event.key !== "Enter" &&
+            event.key !== " "
+        ) {
+            return;
+        }
+
+        const card =
+            event.target.closest(".product-select-card");
+
+        if (!card) {
+            return;
+        }
+
+        event.preventDefault();
+
+        card.click();
+
+    });
+
+
+    /* =====================================================
+       ADD PRODUCT
+    ====================================================== */
+
+    function addProduct(
+        productId,
+        productName,
+        price,
+        stock
+    ) {
+
+        productId = Number(productId);
+
+        price = Number(price);
+
+        stock = Number(stock);
+
+
+        console.log(
+            "addProduct() called:",
+            productId,
+            productName,
+            price,
+            stock
+        );
+
+
+        if (
+            !Number.isInteger(productId) ||
+            productId <= 0
+        ) {
+
+            console.error(
+                "Invalid product ID"
+            );
+
+            return;
+        }
+
+
+        if (
+            isNaN(price) ||
+            price < 0
+        ) {
+
+            console.error(
+                "Invalid product price"
+            );
+
+            return;
+        }
+
+
+        if (
+            isNaN(stock) ||
+            stock <= 0
+        ) {
+
+            alert(
+                "This product is out of stock."
+            );
+
+            return;
+        }
+
+
+        /* Existing product */
+
+        if (
+            Object.prototype.hasOwnProperty.call(
+                billItems,
+                productId
+            )
+        ) {
+
+            if (
+                billItems[productId].quantity >=
+                billItems[productId].stock
+            ) {
+
+                alert(
+                    "Maximum available stock reached."
+                );
+
+                return;
+            }
+
+
+            billItems[productId].quantity += 1;
+
+        }
+
+        /* New product */
+
+        else {
+
+            billItems[productId] = {
+
+                product_id: productId,
+
+                product_name: productName,
+
+                unit_price: price,
+
+                quantity: 1,
+
+                stock: stock,
+
+                discount: 0
+
+            };
+
+        }
+
+
+        renderBillItems();
+
+        calculateTotals();
+
+
+        console.log(
+            "Current bill items:",
+            billItems
+        );
+
+    }
+
+
+    /* =====================================================
+       REMOVE PRODUCT
+    ====================================================== */
+
+    window.removeProduct = function (productId) {
+
+        delete billItems[productId];
+
+        renderBillItems();
+
+        calculateTotals();
+
+    };
+
+
+    /* =====================================================
+       CHANGE QUANTITY
+    ====================================================== */
+
+    window.changeQuantity = function (
+        productId,
+        change
+    ) {
+
+        productId = Number(productId);
+
+        if (!billItems[productId]) {
+            return;
+        }
+
+
+        let newQuantity =
+            billItems[productId].quantity +
+            Number(change);
+
+
+        if (newQuantity <= 0) {
+
+            delete billItems[productId];
+
+        }
+
+        else if (
+            newQuantity >
+            billItems[productId].stock
+        ) {
+
+            alert(
+                "Only " +
+                billItems[productId].stock +
+                " units available."
+            );
+
+            return;
+
+        }
+
+        else {
+
+            billItems[productId].quantity =
+                newQuantity;
+
+        }
+
+
+        renderBillItems();
+
+        calculateTotals();
+
+    };
+
+
+    /* =====================================================
+       DIRECT QUANTITY CHANGE
+    ====================================================== */
+
+    window.setQuantity = function (
+        productId,
+        value
+    ) {
+
+        productId = Number(productId);
+
+        if (!billItems[productId]) {
+            return;
+        }
+
+
+        let quantity =
+            parseInt(value);
+
+
+        if (
+            isNaN(quantity) ||
+            quantity <= 0
+        ) {
+
+            quantity = 1;
+
+        }
+
+
+        if (
+            quantity >
+            billItems[productId].stock
+        ) {
+
+            alert(
+                "Only " +
+                billItems[productId].stock +
+                " units available."
+            );
+
+            quantity =
+                billItems[productId].stock;
+
+        }
+
+
+        billItems[productId].quantity =
+            quantity;
+
+
+        renderBillItems();
+
+        calculateTotals();
+
+    };
+
+
+    /* =====================================================
+       ITEM DISCOUNT
+    ====================================================== */
+
+    window.changeItemDiscount = function (
+        productId,
+        value
+    ) {
+
+        productId = Number(productId);
+
+        if (!billItems[productId]) {
+            return;
+        }
+
+
+        let discount =
+            parseFloat(value);
+
+
+        if (
+            isNaN(discount) ||
+            discount < 0
+        ) {
+
+            discount = 0;
+
+        }
+
+
+        const maximum =
+            billItems[productId].unit_price *
+            billItems[productId].quantity;
+
+
+        if (discount > maximum) {
+
+            discount = maximum;
+
+        }
+
+
+        billItems[productId].discount =
+            discount;
+
+
+        renderBillItems();
+
+        calculateTotals();
+
+    };
+
+
+    /* =====================================================
+       RENDER BILL ITEMS
+    ====================================================== */
+
+    function renderBillItems() {
+
+        const items =
+            Object.values(billItems);
+
+
+        if (items.length === 0) {
+
+            billItemsBody.innerHTML = `
+
+                <tr id="emptyBillRow">
+
+                    <td colspan="6"
+                        class="text-center py-5">
+
+                        <div class="text-muted">
+
+                            <i class="bi bi-cart-x fs-1 d-block mb-3"></i>
+
+                            <h6 class="fw-bold">
+                                No products added
+                            </h6>
+
+                            <p class="small mb-0">
+                                Click a product above to add it to the bill.
+                            </p>
+
+                        </div>
+
+                    </td>
+
+                </tr>
+
+            `;
+
+            updateItemCount();
+
+            return;
+
+        }
+
+
+        let html = "";
+
+
+        items.forEach(function (item) {
+
+            const gross =
+                item.unit_price *
+                item.quantity;
+
+
+            let itemTotal =
+                gross -
+                item.discount;
+
+
+            if (itemTotal < 0) {
+                itemTotal = 0;
+            }
+
+
+            html += `
+
+                <tr>
+
+                    <td>
+
+                        <div class="fw-semibold">
+                            ${escapeHtml(item.product_name)}
+                        </div>
+
+                        <small class="text-muted">
+                            Product ID: ${item.product_id}
+                        </small>
+
+                        <input type="hidden"
+                               name="product_id[]"
+                               value="${item.product_id}">
+
+                    </td>
+
+
+                    <td>
+
+                        ₹${item.unit_price.toFixed(2)}
+
+                        <input type="hidden"
+                               name="unit_price[]"
+                               value="${item.unit_price}">
+
+                    </td>
+
+
+                    <td>
+
+                        <div class="quantity-control">
+
+                            <button type="button"
+                                    onclick="changeQuantity(
+                                        ${item.product_id},
+                                        -1
+                                    )">
+
+                                <i class="bi bi-dash"></i>
+
+                            </button>
+
+
+                            <input type="number"
+                                   min="1"
+                                   max="${item.stock}"
+                                   value="${item.quantity}"
+                                   onchange="setQuantity(
+                                       ${item.product_id},
+                                       this.value
+                                   )">
+
+
+                            <button type="button"
+                                    onclick="changeQuantity(
+                                        ${item.product_id},
+                                        1
+                                    )">
+
+                                <i class="bi bi-plus"></i>
+
+                            </button>
+
+                        </div>
+
+
+                        <input type="hidden"
+                               name="quantity[]"
+                               value="${item.quantity}">
+
+                    </td>
+
+
+                    <td>
+
+                        <input type="number"
+                               class="form-control form-control-sm item-discount-input"
+                               min="0"
+                               step="0.01"
+                               value="${item.discount}"
+                               onchange="changeItemDiscount(
+                                   ${item.product_id},
+                                   this.value
+                               )">
+
+
+                        <input type="hidden"
+                               name="item_discount[]"
+                               value="${item.discount}">
+
+                    </td>
+
+
+                    <td>
+
+                        <strong>
+
+                            ₹${itemTotal.toFixed(2)}
+
+                        </strong>
+
+                    </td>
+
+
+                    <td class="text-end">
+
+                        <button type="button"
+                                class="btn btn-sm btn-outline-danger"
+                                onclick="removeProduct(
+                                    ${item.product_id}
+                                )">
+
+                            <i class="bi bi-trash"></i>
+
+                        </button>
+
+                    </td>
+
+                </tr>
+
+            `;
+
+        });
+
+
+        billItemsBody.innerHTML = html;
+
+        updateItemCount();
+
+    }
+
+
+    /* =====================================================
+       ITEM COUNT
+    ====================================================== */
+
+    function updateItemCount() {
+
+        const count =
+            Object.keys(billItems).length;
+
+
+        const badge =
+            document.getElementById(
+                "itemCountBadge"
+            );
+
+
+        let totalQuantity = 0;
+
+
+        Object.values(billItems)
+            .forEach(function (item) {
+
+                totalQuantity +=
+                    item.quantity;
+
+            });
+
+
+        if (count === 0) {
+
+            badge.textContent =
+                "0 Items";
+
+        }
+
+        else {
+
+            badge.textContent =
+                count +
+                " Products / " +
+                totalQuantity +
+                " Units";
+
+        }
+
+    }
+
+
+    /* =====================================================
+       CALCULATE TOTALS
+    ====================================================== */
+
+    function calculateTotals() {
+
+        let subtotal = 0;
+
+        let itemDiscountTotal = 0;
+
+
+        Object.values(billItems)
+            .forEach(function (item) {
+
+                subtotal +=
+                    item.unit_price *
+                    item.quantity;
+
+                itemDiscountTotal +=
+                    item.discount;
+
+            });
+
+
+        let overallDiscount =
+            parseFloat(
+                document.getElementById(
+                    "discount"
+                ).value
+            );
+
+
+        if (
+            isNaN(overallDiscount) ||
+            overallDiscount < 0
+        ) {
+
+            overallDiscount = 0;
+
+        }
+
+
+        let tax =
+            parseFloat(
+                document.getElementById(
+                    "tax"
+                ).value
+            );
+
+
+        if (
+            isNaN(tax) ||
+            tax < 0
+        ) {
+
+            tax = 0;
+
+        }
+
+
+        const amountAfterItemDiscount =
+            subtotal -
+            itemDiscountTotal;
+
+
+        if (
+            overallDiscount >
+            amountAfterItemDiscount
+        ) {
+
+            overallDiscount =
+                amountAfterItemDiscount;
+
+            document.getElementById(
+                "discount"
+            ).value =
+                overallDiscount.toFixed(2);
+
+        }
+
+
+        let grandTotal =
+            amountAfterItemDiscount -
+            overallDiscount +
+            tax;
+
+
+        if (grandTotal < 0) {
+            grandTotal = 0;
+        }
+
+
+        /* Display */
+
+        document.getElementById(
+            "subtotalDisplay"
+        ).textContent =
+            subtotal.toFixed(2);
+
+
+        document.getElementById(
+            "itemDiscountDisplay"
+        ).textContent =
+            itemDiscountTotal.toFixed(2);
+
+
+        document.getElementById(
+            "grandTotalDisplay"
+        ).textContent =
+            grandTotal.toFixed(2);
+
+
+        /* Hidden form fields */
+
+        document.getElementById(
+            "subtotal"
+        ).value =
+            subtotal.toFixed(2);
+
+
+        document.getElementById(
+            "grand_total"
+        ).value =
+            grandTotal.toFixed(2);
+
+
+        /* Create bill button */
+
+        createBillBtn.disabled =
+            Object.keys(billItems).length === 0;
+
+    }
+
+
+    /* =====================================================
+       ESCAPE HTML
+    ====================================================== */
+
+    function escapeHtml(value) {
+
+        return String(value)
+
+            .replace(
+                /&/g,
+                "&amp;"
+            )
+
+            .replace(
+                /</g,
+                "&lt;"
+            )
+
+            .replace(
+                />/g,
+                "&gt;"
+            )
+
+            .replace(
+                /"/g,
+                "&quot;"
+            )
+
+            .replace(
+                /'/g,
+                "&#039;"
+            );
+
+    }
+
+
+    /* =====================================================
+       CUSTOMER SEARCH
+    ====================================================== */
+
+    customerSearch.addEventListener(
+        "input",
+        function () {
+
+            const search =
+                this.value
+                    .trim()
+                    .toLowerCase();
+
+
+            if (!search) {
+
+                customerResults.style.display =
+                    "none";
+
+                customerResults.innerHTML =
+                    "";
+
+                return;
+
+            }
+
+
+            const filtered =
+                customers.filter(
+                    function (customer) {
+
+                        const name =
+                            String(
+                                customer[1] || ""
+                            ).toLowerCase();
+
+                        const phone =
+                            String(
+                                customer[2] || ""
+                            ).toLowerCase();
+
+                        return (
+                            name.includes(search) ||
+                            phone.includes(search)
+                        );
+
+                    }
+                );
+
+
+            if (filtered.length === 0) {
+
+                customerResults.innerHTML = `
+
+                    <div class="p-3 text-center text-muted">
+
+                        <i class="bi bi-person-x fs-4 d-block mb-2"></i>
+
+                        No customer found.
+
+                    </div>
+
+                `;
+
+                customerResults.style.display =
+                    "block";
+
+                return;
+
+            }
+
+
+            let html = "";
+
+
+            filtered.forEach(
+                function (customer) {
+
+                    html += `
+
+                        <div class="customer-result-item"
+                             onclick="selectCustomer(
+                                 ${customer[0]}
+                             )">
+
+                            <div class="fw-semibold">
+
+                                ${escapeHtml(
+                                    customer[1] || ""
+                                )}
+
+                            </div>
+
+                            <small class="text-muted">
+
+                                <i class="bi bi-telephone me-1"></i>
+
+                                ${escapeHtml(
+                                    customer[2] || "No phone"
+                                )}
+
+                            </small>
+
+                        </div>
+
+                    `;
+
+                }
+            );
+
+
+            customerResults.innerHTML =
+                html;
+
+            customerResults.style.display =
+                "block";
+
+        }
+    );
+
+
+    /* =====================================================
+       SELECT CUSTOMER
+    ====================================================== */
+
+    window.selectCustomer = function (
+        id
+    ) {
+
+        id = Number(id);
+
+
+        const customer =
+            customers.find(
+                function (item) {
+
+                    return Number(
+                        item[0]
+                    ) === id;
+
+                }
+            );
+
+
+        if (!customer) {
+            return;
+        }
+
+
+        selectedCustomer =
+            customer;
+
+
+        customerId.value =
+            customer[0];
+
+
+        customerSearch.value =
+            customer[1] || "";
+
+
+        customerResults.style.display =
+            "none";
+
+
+        document.getElementById(
+            "selectedCustomerName"
+        ).textContent =
+            customer[1] || "—";
+
+
+        document.getElementById(
+            "selectedCustomerPhone"
+        ).textContent =
+            customer[2] || "—";
+
+
+        document.getElementById(
+            "selectedCustomerEmail"
+        ).textContent =
+            customer[3] || "—";
+
+
+        document.getElementById(
+            "selectedCustomerGender"
+        ).textContent =
+            customer[4] || "—";
+
+
+        document.getElementById(
+            "selectedCustomerAddress"
+        ).textContent =
+            customer[5] || "—";
+
+
+        document.getElementById(
+            "selectedCustomerCity"
+        ).textContent =
+            customer[6] || "—";
+
+
+        document.getElementById(
+            "customerInfoCard"
+        ).classList.remove(
+            "d-none"
+        );
+
+
+        document.getElementById(
+            "noCustomerCard"
+        ).classList.add(
+            "d-none"
+        );
+
+    };
+
+
+    /* =====================================================
+       CLEAR CUSTOMER
+    ====================================================== */
+
+    window.clearCustomer = function () {
+
+        selectedCustomer =
+            null;
+
+
+        customerId.value =
+            "";
+
+
+        customerSearch.value =
+            "";
+
+
+        customerResults.style.display =
+            "none";
+
+
+        document.getElementById(
+            "customerInfoCard"
+        ).classList.add(
+            "d-none"
+        );
+
+
+        document.getElementById(
+            "noCustomerCard"
+        ).classList.remove(
+            "d-none"
+        );
+
+    };
+
+
+    /* =====================================================
+       NEW CUSTOMER MODAL
+    ====================================================== */
+
+    window.openNewCustomerModal = function () {
+
+        const modalElement =
+            document.getElementById(
+                "newCustomerModal"
+            );
+
+
+        const modal =
+            bootstrap.Modal.getOrCreateInstance(
+                modalElement
+            );
+
+
+        document.getElementById(
+            "newCustomerForm"
+        ).reset();
+
+
+        document.getElementById(
+            "customerFormMessage"
+        ).className =
+            "alert d-none";
+
+
+        modal.show();
+
+    };
+
+
+    /* =====================================================
+       CREATE NEW CUSTOMER
+    ====================================================== */
+
+    document
+        .getElementById("newCustomerForm")
+        .addEventListener(
+            "submit",
+            async function (event) {
+
+                event.preventDefault();
+
+
+                const form =
+                    this;
+
+
+                const button =
+                    document.getElementById(
+                        "saveCustomerBtn"
+                    );
+
+
+                const message =
+                    document.getElementById(
+                        "customerFormMessage"
+                    );
+
+
+                button.disabled =
+                    true;
+
+
+                button.innerHTML = `
+
+                    <span class="spinner-border spinner-border-sm me-1"></span>
+
+                    Saving...
+
+                `;
+
+
+                message.className =
+                    "alert d-none";
+
+
+                try {
+
+                    const response =
+                        await fetch(
+                            "{{ url_for('billing.create_billing_customer_route') }}",
+                            {
+
+                                method: "POST",
+
+                                headers: {
+                                    "Content-Type":
+                                        "application/json",
+
+                                    "X-Requested-With":
+                                        "XMLHttpRequest"
+
+                                },
+
+                                body:
+                                    JSON.stringify(
+                                        Object.fromEntries(
+                                            new FormData(form)
+                                        )
+                                    )
+
+                            }
+                        );
+
+
+                    const data =
+                        await response.json();
+
+
+                    if (!response.ok || !data.success) {
+
+                        throw new Error(
+                            data.message ||
+                            "Unable to create customer."
+                        );
+
+                    }
+
+
+                    /* =====================================
+                       ADD NEW CUSTOMER TO LOCAL ARRAY
+                    ====================================== */
+
+                    const newCustomer =
+                        data.customer;
+
+
+                    if (!newCustomer) {
+
+                        throw new Error(
+                            "Customer was created, but customer data was not returned."
+                        );
+
+                    }
+
+
+                    /*
+                       Expected customer format:
+
+                       [
+                           id,
+                           customer_name,
+                           phone,
+                           email,
+                           gender,
+                           address,
+                           city,
+                           status
+                       ]
+                    */
+
+
+                    customers.unshift(
+                        newCustomer
+                    );
+
+
+                    /* =====================================
+                       AUTO SELECT CUSTOMER
+                    ====================================== */
+
+                    selectCustomer(
+                        newCustomer[0]
+                    );
+
+
+                    customerSearch.value =
+                        newCustomer[1];
+
+
+                    /* =====================================
+                       CLOSE MODAL
+                    ====================================== */
+
+                    const modalElement =
+                        document.getElementById(
+                            "newCustomerModal"
+                        );
+
+
+                    const modal =
+                        bootstrap.Modal.getInstance(
+                            modalElement
+                        );
+
+
+                    if (modal) {
+                        modal.hide();
+                    }
+
+
+                    /* =====================================
+                       SUCCESS MESSAGE
+                    ====================================== */
+
+                    const successAlert =
+                        document.createElement(
+                            "div"
+                        );
+
+
+                    successAlert.className =
+                        "alert alert-success alert-dismissible fade show";
+
+
+                    successAlert.innerHTML = `
+
+                        <i class="bi bi-check-circle me-2"></i>
+
+                        Customer
+                        <strong>
+                            ${escapeHtml(
+                                newCustomer[1]
+                            )}
+                        </strong>
+                        added and selected successfully.
+
+                        <button type="button"
+                                class="btn-close"
+                                data-bs-dismiss="alert">
+                        </button>
+
+                    `;
+
+
+                    document
+                        .querySelector(
+                            ".container-fluid"
+                        )
+                        .prepend(
+                            successAlert
+                        );
+
+
+                }
+
+                catch (error) {
+
+                    console.error(
+                        "Customer creation error:",
+                        error
+                    );
+
+
+                    message.className =
+                        "alert alert-danger";
+
+
+                    message.textContent =
+                        error.message ||
+                        "Something went wrong.";
+
+                }
+
+                finally {
+
+                    button.disabled =
+                        false;
+
+
+                    button.innerHTML = `
+
+                        <i class="bi bi-check-circle me-1"></i>
+
+                        Save Customer
+
+                    `;
+
+                }
+
+            }
+        );
+
+
+    /* =====================================================
+       PRODUCT SEARCH
+    ====================================================== */
+
+    document
+        .getElementById("productSearch")
+        .addEventListener(
+            "input",
+            function () {
+
+                const search =
+                    this.value
+                        .trim()
+                        .toLowerCase();
+
+
+                const wrappers =
+                    document.querySelectorAll(
+                        ".product-wrapper"
+                    );
+
+
+                let visibleCount = 0;
+
+
+                wrappers.forEach(
+                    function (wrapper) {
+
+                        const card =
+                            wrapper.querySelector(
+                                ".product-select-card"
+                            );
+
+
+                        if (!card) {
+                            return;
+                        }
+
+
+                        const name =
+                            (
+                                card.dataset.productName ||
+                                ""
+                            ).toLowerCase();
+
+
+                        const brand =
+                            (
+                                card.dataset.productBrand ||
+                                ""
+                            ).toLowerCase();
+
+
+                        const sku =
+                            (
+                                card.dataset.productSku ||
+                                ""
+                            ).toLowerCase();
+
+
+                        const matches =
+                            !search ||
+                            name.includes(search) ||
+                            brand.includes(search) ||
+                            sku.includes(search);
+
+
+                        if (matches) {
+
+                            wrapper.style.display =
+                                "";
+
+                            visibleCount++;
+
+                        }
+
+                        else {
+
+                            wrapper.style.display =
+                                "none";
+
+                        }
+
+                    }
+                );
+
+
+                const noProducts =
+                    document.getElementById(
+                        "noProductsMessage"
+                    );
+
+
+                if (visibleCount === 0) {
+
+                    noProducts.classList.remove(
+                        "d-none"
+                    );
+
+                }
+
+                else {
+
+                    noProducts.classList.add(
+                        "d-none"
+                    );
+
+                }
+
+            }
+        );
+
+
+    /* =====================================================
+       DISCOUNT + TAX EVENTS
+    ====================================================== */
+
+    document
+        .getElementById("discount")
+        .addEventListener(
+            "input",
+            calculateTotals
+        );
+
+
+    document
+        .getElementById("tax")
+        .addEventListener(
+            "input",
+            calculateTotals
+        );
+
+
+    /* =====================================================
+       CLOSE CUSTOMER RESULTS OUTSIDE
+    ====================================================== */
+
+    document.addEventListener(
+        "click",
+        function (event) {
+
+            if (
+                !event.target.closest(
+                    "#customerSearch"
+                ) &&
+                !event.target.closest(
+                    "#customerResults"
+                )
+            ) {
+
+                customerResults.style.display =
+                    "none";
+
+            }
+
+        }
+    );
+
+
+    /* =====================================================
+       FORM VALIDATION
+    ====================================================== */
+
+    billingForm.addEventListener(
+        "submit",
+        function (event) {
+
+            const itemCount =
+                Object.keys(
+                    billItems
+                ).length;
+
+
+            if (itemCount === 0) {
+
+                event.preventDefault();
+
+                alert(
+                    "Please add at least one product to the bill."
+                );
+
+                return;
+
+            }
+
+
+            /* Recalculate before submit */
+
+            calculateTotals();
+
+        }
+    );
+
+
+    /* =====================================================
+       INITIAL CALCULATION
+    ====================================================== */
+
+    renderBillItems();
+
+    calculateTotals();
+
+
+    console.log(
+        "Billing page initialized successfully."
+    );
+
+    console.log(
+        "Products loaded:",
+        document.querySelectorAll(
+            ".product-select-card"
+        ).length
+    );
+
+    console.log(
+        "Customers loaded:",
+        customers.length
+    );
+
+});
+
+</script>
+
+{% endblock %}

@@ -1,0 +1,272 @@
+{% extends "base.html" %}
+
+{% block title %}Stock Movement History{% endblock %}
+
+{% block content %}
+
+<div class="container-fluid py-4">
+
+    <!-- HEADER -->
+    <div class="d-flex flex-wrap justify-content-between align-items-center mb-4">
+
+        <div>
+
+            <span class="text-muted small">
+                INVENTORY
+            </span>
+
+            <h2 class="fw-bold mb-1">
+                Stock Movement History
+            </h2>
+
+            <p class="text-muted mb-0">
+                Track every stock addition, removal and adjustment.
+            </p>
+
+        </div>
+
+
+        <a
+            href="{{ url_for('inventory.inventory_index') }}"
+            class="btn btn-light border"
+        >
+
+            <i class="bi bi-arrow-left me-1"></i>
+
+            Back to Inventory
+
+        </a>
+
+    </div>
+
+
+    <!-- MOVEMENT CARD -->
+    <div class="card border-0 shadow-sm">
+
+        <div class="card-body p-0">
+
+            {% if movements %}
+
+            <div class="table-responsive">
+
+                <table class="table align-middle mb-0">
+
+                    <thead class="table-light">
+
+                        <tr>
+
+                            <th class="ps-4">
+                                Date
+                            </th>
+
+                            <th>
+                                Product
+                            </th>
+
+                            <th>
+                                SKU
+                            </th>
+
+                            <th>
+                                Movement
+                            </th>
+
+                            <th>
+                                Quantity
+                            </th>
+
+                            <th>
+                                Previous
+                            </th>
+
+                            <th>
+                                New Stock
+                            </th>
+
+                            <th>
+                                Note
+                            </th>
+
+                        </tr>
+
+                    </thead>
+
+
+                    <tbody>
+
+                    {% for movement in movements %}
+
+                        <tr>
+
+                            <!-- DATE -->
+                            <td class="ps-4">
+
+                                {% if movement.created_at %}
+
+                                    <div class="fw-semibold">
+
+                                        {{ movement.created_at.strftime('%d %b %Y') }}
+
+                                    </div>
+
+                                    <small class="text-muted">
+
+                                        {{ movement.created_at.strftime('%I:%M %p') }}
+
+                                    </small>
+
+                                {% else %}
+
+                                    —
+
+                                {% endif %}
+
+                            </td>
+
+
+                            <!-- PRODUCT -->
+                            <td>
+
+                                <strong>
+                                    {{ movement.product_name }}
+                                </strong>
+
+                            </td>
+
+
+                            <!-- SKU -->
+                            <td>
+
+                                <span class="font-monospace small">
+
+                                    {{ movement.sku }}
+
+                                </span>
+
+                            </td>
+
+
+                            <!-- MOVEMENT -->
+                            <td>
+
+                                {% if movement.movement_type == "Stock In" %}
+
+                                <span class="badge bg-success-subtle text-success">
+
+                                    <i class="bi bi-arrow-down-circle me-1"></i>
+
+                                    Stock In
+
+                                </span>
+
+                                {% elif movement.movement_type == "Stock Out" %}
+
+                                <span class="badge bg-warning-subtle text-warning-emphasis">
+
+                                    <i class="bi bi-arrow-up-circle me-1"></i>
+
+                                    Stock Out
+
+                                </span>
+
+                                {% else %}
+
+                                <span class="badge bg-info-subtle text-info-emphasis">
+
+                                    <i class="bi bi-sliders me-1"></i>
+
+                                    Adjustment
+
+                                </span>
+
+                                {% endif %}
+
+                            </td>
+
+
+                            <!-- QUANTITY -->
+                            <td>
+
+                                <strong>
+                                    {{ movement.quantity }}
+                                </strong>
+
+                            </td>
+
+
+                            <!-- PREVIOUS -->
+                            <td>
+
+                                {{ movement.previous_stock }}
+
+                            </td>
+
+
+                            <!-- NEW -->
+                            <td>
+
+                                <strong>
+                                    {{ movement.new_stock }}
+                                </strong>
+
+                            </td>
+
+
+                            <!-- NOTE -->
+                            <td>
+
+                                {% if movement.note %}
+
+                                    <span class="text-muted small">
+                                        {{ movement.note }}
+                                    </span>
+
+                                {% else %}
+
+                                    <span class="text-muted">
+                                        —
+                                    </span>
+
+                                {% endif %}
+
+                            </td>
+
+                        </tr>
+
+                    {% endfor %}
+
+                    </tbody>
+
+                </table>
+
+            </div>
+
+            {% else %}
+
+            <div class="text-center py-5">
+
+                <i
+                    class="bi bi-clock-history text-muted"
+                    style="font-size: 48px;"
+                ></i>
+
+                <h5 class="fw-bold mt-3">
+                    No Stock Movements
+                </h5>
+
+                <p class="text-muted mb-0">
+                    Stock movement history will appear here
+                    after inventory transactions.
+                </p>
+
+            </div>
+
+            {% endif %}
+
+        </div>
+
+    </div>
+
+</div>
+
+{% endblock %}

@@ -1,0 +1,331 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard | Smart Retail ERP{% endblock %}
+
+{% block page_title %}Business Dashboard{% endblock %}
+
+{% block page_subtitle %}Live inventory insights, analytics, and smart retail overview{% endblock %}
+
+{% block content %}
+
+<div class="hero-dashboard mb-4">
+    <div>
+        <span class="hero-badge">Smart Retail ERP</span>
+        <h2>Welcome back, {{ session['full_name'] }} 👋</h2>
+        <p>Track product performance, stock health, and business insights from one powerful dashboard.</p>
+    </div>
+
+    <a href="{{ url_for('product.products') }}" class="btn btn-light hero-btn">
+        <i class="bi bi-box-seam me-1"></i> Manage Products
+    </a>
+</div>
+
+
+<div class="row g-4">
+
+    <div class="col-md-3">
+        <div class="modern-stat stat-purple">
+            <div class="stat-top">
+                <span>Total Products</span>
+                <i class="bi bi-box-seam-fill"></i>
+            </div>
+            <h3>{{ data.total_products }}</h3>
+            <p>Products in inventory</p>
+        </div>
+    </div>
+
+    <div class="col-md-3">
+        <div class="modern-stat stat-green">
+            <div class="stat-top">
+                <span>Active Products</span>
+                <i class="bi bi-check-circle-fill"></i>
+            </div>
+            <h3>{{ data.active_products }}</h3>
+            <p>Available for business</p>
+        </div>
+    </div>
+
+    <div class="col-md-3">
+        <div class="modern-stat stat-orange">
+            <div class="stat-top">
+                <span>Low Stock</span>
+                <i class="bi bi-exclamation-triangle-fill"></i>
+            </div>
+            <h3>{{ data.low_stock }}</h3>
+            <p>Need reorder soon</p>
+        </div>
+    </div>
+
+    <div class="col-md-3">
+        <div class="modern-stat stat-red">
+            <div class="stat-top">
+                <span>Out of Stock</span>
+                <i class="bi bi-x-circle-fill"></i>
+            </div>
+            <h3>{{ data.out_of_stock }}</h3>
+            <p>Unavailable products</p>
+        </div>
+    </div>
+
+</div>
+
+
+<div class="row g-4 mt-2">
+
+    <div class="col-lg-8">
+        <div class="analytics-card">
+            <div class="section-head">
+                <div>
+                    <h5>Category Performance</h5>
+                    <p>Product distribution across categories</p>
+                </div>
+                <span class="soft-badge">Live Data</span>
+            </div>
+
+            <canvas id="categoryChart" height="120"></canvas>
+        </div>
+    </div>
+
+    <div class="col-lg-4">
+        <div class="analytics-card">
+            <div class="section-head">
+                <div>
+                    <h5>Stock Health</h5>
+                    <p>Inventory availability overview</p>
+                </div>
+            </div>
+
+            <canvas id="stockChart" height="220"></canvas>
+        </div>
+    </div>
+
+</div>
+
+
+<div class="row g-4 mt-2">
+
+    <div class="col-lg-8">
+        <div class="analytics-card">
+            <div class="section-head">
+                <div>
+                    <h5>Recent Products</h5>
+                    <p>Latest items added to your ERP</p>
+                </div>
+
+                <a href="{{ url_for('product.products') }}" class="btn btn-primary btn-sm">
+                    View All
+                </a>
+            </div>
+
+            <div class="table-responsive">
+                <table class="table modern-table align-middle">
+                    <thead>
+                        <tr>
+                            <th>Product</th>
+                            <th>Category</th>
+                            <th>Stock</th>
+                            <th>Price</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+                        {% for product in data.recent_products %}
+                        <tr>
+                            <td>
+                                <div class="product-mini">
+                                    {% if product[6] %}
+                                        <img src="{{ url_for('static', filename='uploads/products/' ~ product[6]) }}">
+                                    {% else %}
+                                        <div class="mini-placeholder">
+                                            <i class="bi bi-image"></i>
+                                        </div>
+                                    {% endif %}
+
+                                    <div>
+                                        <strong>{{ product[1] }}</strong>
+                                        <small>{{ product[2] }}</small>
+                                    </div>
+                                </div>
+                            </td>
+
+                            <td>{{ product[7] }}</td>
+
+                            <td>
+                                {% if product[3] <= product[4] %}
+                                    <span class="badge bg-danger-subtle text-danger px-3 py-2">
+                                        Low: {{ product[3] }}
+                                    </span>
+                                {% else %}
+                                    <span class="badge bg-success-subtle text-success px-3 py-2">
+                                        {{ product[3] }}
+                                    </span>
+                                {% endif %}
+                            </td>
+
+                            <td><strong>₹{{ product[5] }}</strong></td>
+
+                            <td>
+                                {% if product[3] == 0 %}
+                                    <span class="badge bg-danger-subtle text-danger px-3 py-2">Out</span>
+                                {% elif product[3] <= product[4] %}
+                                    <span class="badge bg-warning-subtle text-warning px-3 py-2">Reorder</span>
+                                {% else %}
+                                    <span class="badge bg-success-subtle text-success px-3 py-2">Available</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="5" class="text-center text-muted py-4">No products added yet</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+
+    <div class="col-lg-4">
+
+        <div class="analytics-card mb-4">
+            <div class="section-head">
+                <div>
+                    <h5>Inventory Insights</h5>
+                    <p>Smart stock condition summary</p>
+                </div>
+                <i class="bi bi-lightning-charge-fill text-warning fs-4"></i>
+            </div>
+
+            {% set healthy = data.normal_stock %}
+            {% set total = data.total_products %}
+            {% if total > 0 %}
+                {% set health_percent = ((healthy / total) * 100) | round(0) %}
+            {% else %}
+                {% set health_percent = 0 %}
+            {% endif %}
+
+            <div class="insight-main">
+                <div>
+                    <span>Inventory Health</span>
+                    <h2>{{ health_percent }}%</h2>
+                    <p>Healthy stock ratio</p>
+                </div>
+
+                <div class="insight-icon">
+                    <i class="bi bi-activity"></i>
+                </div>
+            </div>
+
+            <div class="progress insight-progress mb-4">
+                <div class="progress-bar"
+                     style="width: {{ health_percent }}%;">
+                </div>
+            </div>
+
+            <div class="insight-list">
+                <div>
+                    <span><i class="bi bi-box-seam text-primary"></i> Total Items</span>
+                    <strong>{{ data.total_products }}</strong>
+                </div>
+
+                <div>
+                    <span><i class="bi bi-check-circle text-success"></i> Healthy Stock</span>
+                    <strong>{{ data.normal_stock }}</strong>
+                </div>
+
+                <div>
+                    <span><i class="bi bi-exclamation-triangle text-warning"></i> Need Reorder</span>
+                    <strong>{{ data.low_stock }}</strong>
+                </div>
+
+                <div>
+                    <span><i class="bi bi-x-circle text-danger"></i> Out of Stock</span>
+                    <strong>{{ data.out_of_stock }}</strong>
+                </div>
+            </div>
+        </div>
+
+        <div class="analytics-card">
+            <h5>System Status</h5>
+
+            <div class="system-line">
+                <span><i class="bi bi-database-check"></i> Database</span>
+                <strong class="text-success">Connected</strong>
+            </div>
+
+            <div class="system-line">
+                <span><i class="bi bi-shield-check"></i> Auth</span>
+                <strong class="text-success">Active</strong>
+            </div>
+
+            <div class="system-line">
+                <span><i class="bi bi-box-seam"></i> Products</span>
+                <strong class="text-success">Running</strong>
+            </div>
+
+            <div class="system-line">
+                <span><i class="bi bi-graph-up"></i> Version</span>
+                <strong>v1.6</strong>
+            </div>
+        </div>
+
+    </div>
+
+</div>
+
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+const categoryLabels = {{ data.category_labels | tojson }};
+const categoryValues = {{ data.category_values | tojson }};
+
+new Chart(document.getElementById("categoryChart"), {
+    type: "bar",
+    data: {
+        labels: categoryLabels,
+        datasets: [{
+            label: "Products",
+            data: categoryValues,
+            backgroundColor: [
+                "#6366f1", "#06b6d4", "#22c55e", "#f59e0b", "#ef4444",
+                "#8b5cf6", "#14b8a6", "#f97316", "#ec4899", "#64748b"
+            ],
+            borderRadius: 12
+        }]
+    },
+    options: {
+        responsive: true,
+        plugins: { legend: { display: false } },
+        scales: {
+            y: {
+                beginAtZero: true,
+                ticks: { precision: 0 }
+            }
+        }
+    }
+});
+
+new Chart(document.getElementById("stockChart"), {
+    type: "doughnut",
+    data: {
+        labels: ["Normal Stock", "Low Stock", "Out of Stock"],
+        datasets: [{
+            data: [{{ data.normal_stock }}, {{ data.low_stock }}, {{ data.out_of_stock }}],
+            backgroundColor: ["#22c55e", "#f59e0b", "#ef4444"],
+            borderWidth: 0
+        }]
+    },
+    options: {
+        cutout: "70%",
+        responsive: true,
+        plugins: {
+            legend: { position: "bottom" }
+        }
+    }
+});
+</script>
+
+{% endblock %}

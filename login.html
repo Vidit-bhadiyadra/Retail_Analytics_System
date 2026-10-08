@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Login | Smart Retail ERP</title>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+
+<body class="login-page">
+
+<div class="login-wrapper">
+
+    <div class="login-left">
+        <div class="login-brand">
+            <i class="bi bi-shop-window"></i>
+            <span>RetailPro ERP</span>
+        </div>
+
+        <h1>Smart Retail ERP & Business Analytics</h1>
+        <p>
+            Manage products, inventory, sales, customers, billing,
+            and analytics from one modern retail management platform.
+        </p>
+
+        <div class="login-feature">
+            <i class="bi bi-bar-chart-fill"></i>
+            <span>Real-time dashboard and business insights</span>
+        </div>
+
+        <div class="login-feature">
+            <i class="bi bi-box-seam-fill"></i>
+            <span>Product, stock, category and SKU management</span>
+        </div>
+
+        <div class="login-feature">
+            <i class="bi bi-shield-lock-fill"></i>
+            <span>Secure admin login system</span>
+        </div>
+    </div>
+
+    <div class="login-card premium-login-card">
+
+        <div class="text-center mb-4">
+            <div class="login-logo">
+                <i class="bi bi-person-lock"></i>
+            </div>
+
+            <h2>Welcome Back</h2>
+            <p class="text-muted">Login to continue your ERP dashboard</p>
+        </div>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }}">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <form method="POST" action="{{ url_for('auth.login') }}">
+
+            <div class="mb-3">
+                <label class="form-label">Username</label>
+                <div class="input-icon-box">
+                    <i class="bi bi-person"></i>
+                    <input type="text" name="username" class="form-control" placeholder="Enter username" required>
+                </div>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">Password</label>
+                <div class="input-icon-box">
+                    <i class="bi bi-lock"></i>
+                    <input type="password" name="password" id="password" class="form-control" placeholder="Enter password" required>
+                    <button type="button" class="password-toggle" onclick="togglePassword()">
+                        <i class="bi bi-eye"></i>
+                    </button>
+                </div>
+            </div>
+
+            <button type="submit" class="btn btn-primary w-100 mt-2">
+                <i class="bi bi-box-arrow-in-right me-1"></i> Login
+            </button>
+
+        </form>
+
+        <div class="demo-box mt-4">
+            <strong>Demo Login</strong>
+            <div>Username: <span>admin</span></div>
+            <div>Password: <span>admin123</span></div>
+        </div>
+
+    </div>
+
+</div>
+
+<script>
+function togglePassword() {
+    const password = document.getElementById("password");
+    password.type = password.type === "password" ? "text" : "password";
+}
+</script>
+
+</body>
+</html>

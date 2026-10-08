@@ -1,0 +1,1128 @@
+{% extends "base.html" %}
+
+{% block title %}Invoice {{ sale[1] }}{% endblock %}
+
+{% block content %}
+
+<style>
+
+    /* =========================================================
+       INVOICE PAGE
+    ========================================================= */
+
+    .invoice-page {
+        padding: 28px;
+    }
+
+    .invoice-wrapper {
+        max-width: 1180px;
+        margin: 0 auto;
+    }
+
+
+    /* =========================================================
+       TOP BAR
+    ========================================================= */
+
+    .invoice-topbar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 20px;
+        margin-bottom: 24px;
+        flex-wrap: wrap;
+    }
+
+    .invoice-heading h2 {
+        margin: 0;
+        font-weight: 800;
+        color: #172033;
+    }
+
+    .invoice-heading p {
+        margin: 5px 0 0;
+        color: #7b8498;
+        font-size: 14px;
+    }
+
+    .invoice-actions {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+    }
+
+    .invoice-actions .btn {
+        border-radius: 10px;
+        font-weight: 600;
+        padding: 10px 16px;
+    }
+
+
+    /* =========================================================
+       MAIN INVOICE CARD
+    ========================================================= */
+
+    .invoice-card {
+        background: #ffffff;
+        border-radius: 18px;
+        box-shadow: 0 10px 35px rgba(23, 32, 51, 0.08);
+        overflow: hidden;
+        border: 1px solid #edf0f5;
+    }
+
+
+    /* =========================================================
+       INVOICE HEADER
+    ========================================================= */
+
+    .invoice-header {
+        padding: 32px;
+        border-bottom: 1px solid #edf0f5;
+        background: linear-gradient(
+            135deg,
+            #ffffff 0%,
+            #f8faff 100%
+        );
+    }
+
+    .brand-section {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 30px;
+        flex-wrap: wrap;
+    }
+
+    .brand-title {
+        font-size: 28px;
+        font-weight: 800;
+        color: #1d4ed8;
+        margin: 0;
+    }
+
+    .brand-subtitle {
+        margin-top: 5px;
+        color: #7b8498;
+        font-size: 13px;
+        letter-spacing: 0.4px;
+    }
+
+    .invoice-number-box {
+        text-align: right;
+    }
+
+    .invoice-label {
+        font-size: 11px;
+        color: #8a93a6;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        font-weight: 700;
+    }
+
+    .invoice-number {
+        font-size: 24px;
+        font-weight: 800;
+        color: #172033;
+        margin-top: 4px;
+    }
+
+    .invoice-date {
+        color: #6f788b;
+        font-size: 13px;
+        margin-top: 4px;
+    }
+
+
+    /* =========================================================
+       STATUS
+    ========================================================= */
+
+    .status-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 7px 12px;
+        border-radius: 50px;
+        font-size: 12px;
+        font-weight: 700;
+        margin-top: 10px;
+    }
+
+    .status-completed {
+        background: #e9f8ef;
+        color: #16834d;
+    }
+
+    .status-cancelled {
+        background: #fff0f0;
+        color: #d83b3b;
+    }
+
+
+    /* =========================================================
+       INFORMATION SECTION
+    ========================================================= */
+
+    .invoice-info {
+        padding: 28px 32px;
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr;
+        gap: 20px;
+        border-bottom: 1px solid #edf0f5;
+    }
+
+    .info-box {
+        background: #f8f9fc;
+        border-radius: 14px;
+        padding: 18px;
+        border: 1px solid #eef1f6;
+    }
+
+    .info-title {
+        font-size: 11px;
+        font-weight: 800;
+        color: #8a93a6;
+        text-transform: uppercase;
+        letter-spacing: 0.8px;
+        margin-bottom: 10px;
+    }
+
+    .info-name {
+        font-size: 16px;
+        font-weight: 750;
+        color: #20283a;
+        margin-bottom: 5px;
+    }
+
+    .info-text {
+        font-size: 13px;
+        color: #6f788b;
+        line-height: 1.7;
+    }
+
+
+    /* =========================================================
+       ITEMS TABLE
+    ========================================================= */
+
+    .items-section {
+        padding: 28px 32px;
+    }
+
+    .section-title {
+        font-size: 17px;
+        font-weight: 800;
+        color: #20283a;
+        margin-bottom: 18px;
+    }
+
+    .invoice-table-wrapper {
+        overflow-x: auto;
+        border: 1px solid #edf0f5;
+        border-radius: 14px;
+    }
+
+    .invoice-table {
+        width: 100%;
+        border-collapse: collapse;
+        min-width: 760px;
+    }
+
+    .invoice-table thead th {
+        background: #f7f8fb;
+        color: #727c91;
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: 0.7px;
+        font-weight: 800;
+        padding: 14px 16px;
+        border-bottom: 1px solid #e9ecf2;
+        white-space: nowrap;
+    }
+
+    .invoice-table tbody td {
+        padding: 16px;
+        border-bottom: 1px solid #f0f2f6;
+        color: #30394d;
+        font-size: 13px;
+        vertical-align: middle;
+    }
+
+    .invoice-table tbody tr:last-child td {
+        border-bottom: none;
+    }
+
+    .product-name {
+        font-weight: 700;
+        color: #20283a;
+    }
+
+    .product-sku {
+        font-size: 11px;
+        color: #8b94a7;
+        margin-top: 3px;
+    }
+
+    .money {
+        font-weight: 700;
+        white-space: nowrap;
+    }
+
+
+    /* =========================================================
+       TOTALS
+    ========================================================= */
+
+    .invoice-bottom {
+        display: flex;
+        justify-content: flex-end;
+        padding: 0 32px 32px;
+    }
+
+    .totals-box {
+        width: 390px;
+        max-width: 100%;
+        border: 1px solid #edf0f5;
+        border-radius: 14px;
+        overflow: hidden;
+    }
+
+    .total-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 13px 18px;
+        color: #687287;
+        font-size: 13px;
+        border-bottom: 1px solid #f0f2f6;
+    }
+
+    .total-row strong {
+        color: #30394d;
+    }
+
+    .grand-total {
+        background: linear-gradient(
+            135deg,
+            #eff5ff 0%,
+            #f7f9ff 100%
+        );
+        padding: 18px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .grand-total-label {
+        font-size: 14px;
+        font-weight: 800;
+        color: #27334b;
+    }
+
+    .grand-total-value {
+        font-size: 24px;
+        font-weight: 900;
+        color: #1d4ed8;
+    }
+
+
+    /* =========================================================
+       FOOTER
+    ========================================================= */
+
+    .invoice-footer {
+        padding: 24px 32px;
+        border-top: 1px solid #edf0f5;
+        background: #fafbfc;
+        text-align: center;
+    }
+
+    .invoice-footer-title {
+        font-weight: 700;
+        color: #30394d;
+        font-size: 13px;
+    }
+
+    .invoice-footer-text {
+        color: #8a93a6;
+        font-size: 12px;
+        margin-top: 4px;
+    }
+
+
+    /* =========================================================
+       RESPONSIVE
+    ========================================================= */
+
+    @media (max-width: 900px) {
+
+        .invoice-info {
+            grid-template-columns: 1fr;
+        }
+
+        .invoice-page {
+            padding: 18px;
+        }
+
+        .invoice-header,
+        .items-section {
+            padding: 22px;
+        }
+
+        .invoice-bottom {
+            padding: 0 22px 22px;
+        }
+
+        .invoice-footer {
+            padding: 20px;
+        }
+
+        .invoice-number-box {
+            text-align: left;
+        }
+
+    }
+
+
+    /* =========================================================
+       PRINT
+    ========================================================= */
+
+    @media print {
+
+        body {
+            background: #ffffff !important;
+        }
+
+        .sidebar,
+        .topbar,
+        .navbar,
+        .invoice-topbar,
+        .no-print {
+            display: none !important;
+        }
+
+        .invoice-page {
+            padding: 0 !important;
+        }
+
+        .invoice-wrapper {
+            max-width: 100% !important;
+        }
+
+        .invoice-card {
+            box-shadow: none !important;
+            border: none !important;
+            border-radius: 0 !important;
+        }
+
+        .invoice-header {
+            background: #ffffff !important;
+        }
+
+        .invoice-info {
+            grid-template-columns: 1fr 1fr 1fr;
+        }
+
+        .invoice-table-wrapper {
+            border: 1px solid #ddd;
+        }
+
+        .invoice-footer {
+            background: #ffffff !important;
+        }
+
+        .status-badge {
+            border: 1px solid #ddd;
+        }
+
+    }
+
+</style>
+
+
+<div class="invoice-page">
+
+    <div class="invoice-wrapper">
+
+
+        <!-- =====================================================
+             TOP BAR
+        ====================================================== -->
+
+        <div class="invoice-topbar no-print">
+
+            <div class="invoice-heading">
+
+                <h2>
+
+                    <i class="bi bi-receipt-cutoff me-2"></i>
+
+                    Invoice
+
+                </h2>
+
+                <p>
+                    View and manage invoice details
+                </p>
+
+            </div>
+
+
+            <div class="invoice-actions">
+
+                <button
+                    type="button"
+                    class="btn btn-dark"
+                    onclick="window.print()"
+                >
+
+                    <i class="bi bi-printer me-2"></i>
+
+                    Print Invoice
+
+                </button>
+
+
+                <a
+                    href="{{ url_for('billing.billing_index') }}"
+                    class="btn btn-primary"
+                >
+
+                    <i class="bi bi-plus-circle me-2"></i>
+
+                    New Bill
+
+                </a>
+
+
+                <a
+                    href="{{ url_for('billing.sales_history') }}"
+                    class="btn btn-light border"
+                >
+
+                    <i class="bi bi-clock-history me-2"></i>
+
+                    Sales History
+
+                </a>
+
+            </div>
+
+        </div>
+
+
+        <!-- =====================================================
+             MAIN INVOICE
+        ====================================================== -->
+
+        <div class="invoice-card">
+
+
+            <!-- =================================================
+                 INVOICE HEADER
+            ================================================== -->
+
+            <div class="invoice-header">
+
+                <div class="brand-section">
+
+
+                    <!-- BRAND -->
+
+                    <div>
+
+                        <h1 class="brand-title">
+                            Smart Retail ERP
+                        </h1>
+
+                        <div class="brand-subtitle">
+                            Retail Management & Business Analytics System
+                        </div>
+
+                    </div>
+
+
+                    <!-- INVOICE DETAILS -->
+
+                    <div class="invoice-number-box">
+
+                        <div class="invoice-label">
+                            Invoice Number
+                        </div>
+
+                        <div class="invoice-number">
+                            {{ sale[1] }}
+                        </div>
+
+
+                        <div class="invoice-date">
+
+                            <i class="bi bi-calendar3 me-1"></i>
+
+                            {{ sale[17] }}
+
+                        </div>
+
+
+                        <!-- =====================================
+                             SALE STATUS
+                        ====================================== -->
+
+                        {% if sale[15] == "Cancelled" %}
+
+                            <div class="status-badge status-cancelled">
+
+                                <i class="bi bi-x-circle-fill"></i>
+
+                                Cancelled
+
+                            </div>
+
+                        {% else %}
+
+                            <div class="status-badge status-completed">
+
+                                <i class="bi bi-check-circle-fill"></i>
+
+                                {{ sale[15] }}
+
+                            </div>
+
+                        {% endif %}
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <!-- =================================================
+                 CUSTOMER / PAYMENT / CREATED BY
+            ================================================== -->
+
+            <div class="invoice-info">
+
+
+                <!-- =============================================
+                     CUSTOMER
+                ============================================== -->
+
+                <div class="info-box">
+
+                    <div class="info-title">
+
+                        <i class="bi bi-person me-1"></i>
+
+                        Customer
+
+                    </div>
+
+
+                    <div class="info-name">
+
+                        {% if sale[3] %}
+
+                            {{ sale[3] }}
+
+                        {% else %}
+
+                            Walk-in Customer
+
+                        {% endif %}
+
+                    </div>
+
+
+                    {% if sale[4] %}
+
+                        <div class="info-text">
+
+                            <i class="bi bi-telephone me-1"></i>
+
+                            {{ sale[4] }}
+
+                        </div>
+
+                    {% endif %}
+
+
+                    {% if sale[5] %}
+
+                        <div class="info-text">
+
+                            <i class="bi bi-envelope me-1"></i>
+
+                            {{ sale[5] }}
+
+                        </div>
+
+                    {% endif %}
+
+
+                    {% if sale[6] %}
+
+                        <div class="info-text">
+
+                            <i class="bi bi-geo-alt me-1"></i>
+
+                            {{ sale[6] }}
+
+                        </div>
+
+                    {% endif %}
+
+                </div>
+
+
+                <!-- =============================================
+                     PAYMENT
+                ============================================== -->
+
+                <div class="info-box">
+
+                    <div class="info-title">
+
+                        <i class="bi bi-credit-card me-1"></i>
+
+                        Payment
+
+                    </div>
+
+
+                    <div class="info-name">
+
+                        {{ sale[13] }}
+
+                    </div>
+
+
+                    <div class="info-text">
+
+                        Payment Status:
+
+                        {% if sale[14] == "Paid" %}
+
+                            <span class="text-success fw-semibold">
+                                Paid
+                            </span>
+
+                        {% elif sale[14] == "Cancelled" %}
+
+                            <span class="text-danger fw-semibold">
+                                Cancelled
+                            </span>
+
+                        {% else %}
+
+                            <span class="text-warning fw-semibold">
+                                {{ sale[14] }}
+                            </span>
+
+                        {% endif %}
+
+                    </div>
+
+
+                    <div class="info-text mt-1">
+
+                        Amount:
+
+                        <strong class="text-dark">
+
+                            ₹{{ "%.2f"|format(sale[12]|float) }}
+
+                        </strong>
+
+                    </div>
+
+                </div>
+
+
+                <!-- =============================================
+                     CREATED BY
+                ============================================== -->
+
+                <div class="info-box">
+
+                    <div class="info-title">
+
+                        <i class="bi bi-person-badge me-1"></i>
+
+                        Created By
+
+                    </div>
+
+
+                    <div class="info-name">
+
+                        {{ sale[8] or "Unknown" }}
+
+                    </div>
+
+
+                    <div class="info-text">
+
+                        Invoice ID:
+
+                        <strong>
+                            #{{ sale[0] }}
+                        </strong>
+
+                    </div>
+
+
+                    <div class="info-text mt-1">
+
+                        Sale Status:
+
+                        {% if sale[15] == "Cancelled" %}
+
+                            <span class="text-danger fw-semibold">
+                                Cancelled
+                            </span>
+
+                        {% else %}
+
+                            <span class="text-success fw-semibold">
+                                {{ sale[15] }}
+                            </span>
+
+                        {% endif %}
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <!-- =================================================
+                 PURCHASED ITEMS
+            ================================================== -->
+
+            <div class="items-section">
+
+                <div class="section-title">
+
+                    <i class="bi bi-cart3 me-2"></i>
+
+                    Purchased Items
+
+                </div>
+
+
+                <div class="invoice-table-wrapper">
+
+                    <table class="invoice-table">
+
+                        <thead>
+
+                            <tr>
+
+                                <th style="width: 45%;">
+                                    Product
+                                </th>
+
+                                <th class="text-center">
+                                    Qty
+                                </th>
+
+                                <th class="text-end">
+                                    Unit Price
+                                </th>
+
+                                <th class="text-end">
+                                    Discount
+                                </th>
+
+                                <th class="text-end">
+                                    Total
+                                </th>
+
+                            </tr>
+
+                        </thead>
+
+
+                        <tbody>
+
+                            {% if items %}
+
+                                {% for item in items %}
+
+                                    <tr>
+
+
+                                        <!-- PRODUCT -->
+
+                                        <td>
+
+                                            <div class="product-name">
+
+                                                {{ item[2] }}
+
+                                            </div>
+
+
+                                            {% if item[3] %}
+
+                                                <div class="product-sku">
+
+                                                    SKU:
+                                                    {{ item[3] }}
+
+                                                </div>
+
+                                            {% endif %}
+
+                                        </td>
+
+
+                                        <!-- QUANTITY -->
+
+                                        <td class="text-center">
+
+                                            <span class="fw-semibold">
+
+                                                {{ item[4] }}
+
+                                            </span>
+
+                                        </td>
+
+
+                                        <!-- UNIT PRICE -->
+
+                                        <td class="text-end money">
+
+                                            ₹{{ "%.2f"|format(item[5]|float) }}
+
+                                        </td>
+
+
+                                        <!-- DISCOUNT -->
+
+                                        <td class="text-end">
+
+                                            {% if item[6]|float > 0 %}
+
+                                                <span class="text-danger">
+
+                                                    -₹{{ "%.2f"|format(item[6]|float) }}
+
+                                                </span>
+
+                                            {% else %}
+
+                                                <span class="text-muted">
+
+                                                    ₹0.00
+
+                                                </span>
+
+                                            {% endif %}
+
+                                        </td>
+
+
+                                        <!-- TOTAL -->
+
+                                        <td class="text-end money">
+
+                                            ₹{{ "%.2f"|format(item[7]|float) }}
+
+                                        </td>
+
+                                    </tr>
+
+                                {% endfor %}
+
+                            {% else %}
+
+                                <tr>
+
+                                    <td
+                                        colspan="5"
+                                        class="text-center text-muted py-5"
+                                    >
+
+                                        <i
+                                            class="bi bi-cart-x fs-2 d-block mb-2"
+                                        ></i>
+
+                                        No items found for this invoice.
+
+                                    </td>
+
+                                </tr>
+
+                            {% endif %}
+
+                        </tbody>
+
+                    </table>
+
+                </div>
+
+            </div>
+
+
+            <!-- =================================================
+                 TOTALS
+            ================================================== -->
+
+            <div class="invoice-bottom">
+
+                <div class="totals-box">
+
+
+                    <!-- SUBTOTAL -->
+
+                    <div class="total-row">
+
+                        <span>
+                            Subtotal
+                        </span>
+
+                        <strong>
+
+                            ₹{{ "%.2f"|format(sale[9]|float) }}
+
+                        </strong>
+
+                    </div>
+
+
+                    <!-- DISCOUNT -->
+
+                    <div class="total-row">
+
+                        <span>
+                            Discount
+                        </span>
+
+                        <strong class="text-danger">
+
+                            -₹{{ "%.2f"|format(sale[10]|float) }}
+
+                        </strong>
+
+                    </div>
+
+
+                    <!-- TAX -->
+
+                    <div class="total-row">
+
+                        <span>
+                            Tax / GST
+                        </span>
+
+                        <strong>
+
+                            ₹{{ "%.2f"|format(sale[11]|float) }}
+
+                        </strong>
+
+                    </div>
+
+
+                    <!-- GRAND TOTAL -->
+
+                    <div class="grand-total">
+
+                        <div class="grand-total-label">
+
+                            Grand Total
+
+                        </div>
+
+                        <div class="grand-total-value">
+
+                            ₹{{ "%.2f"|format(sale[12]|float) }}
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <!-- =================================================
+                 FOOTER
+            ================================================== -->
+
+            <div class="invoice-footer">
+
+                <div class="invoice-footer-title">
+
+                    Thank you for your business!
+
+                </div>
+
+                <div class="invoice-footer-text">
+
+                    This invoice was generated by Smart Retail ERP.
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <!-- =====================================================
+             CANCEL INVOICE
+        ====================================================== -->
+
+        {% if sale[15] != "Cancelled" %}
+
+            <div class="text-center mt-4 no-print">
+
+                <form
+                    method="POST"
+                    action="{{ url_for('billing.cancel_billing', sale_id=sale[0]) }}"
+                    onsubmit="return confirm('Are you sure you want to cancel this invoice? Stock will be restored automatically.');"
+                >
+
+                    <button
+                        type="submit"
+                        class="btn btn-outline-danger"
+                    >
+
+                        <i class="bi bi-x-circle me-2"></i>
+
+                        Cancel Invoice
+
+                    </button>
+
+                </form>
+
+            </div>
+
+        {% else %}
+
+            <div class="text-center mt-4 no-print">
+
+                <div class="alert alert-danger d-inline-flex align-items-center">
+
+                    <i class="bi bi-exclamation-triangle-fill me-2"></i>
+
+                    This invoice has been cancelled and the stock has been restored.
+
+                </div>
+
+            </div>
+
+        {% endif %}
+
+
+    </div>
+
+</div>
+
+{% endblock %}
